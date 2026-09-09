@@ -1,0 +1,415 @@
+/* Run 对比的**共享样式**：抽屉（.compare-drawer 壳）与独立对比页（.cp-result 卡）
+   都吃这一份，由 CompareView.tsx 自己 import —— 两个入口各写一套样式的下场是
+   同一对 run 在两处长得不一样，而「哪一处对」没人答得上来（与共享判据同理，
+   见 CompareView.tsx 头部注释）。
+   ⚠️ 选择器**不带入口前缀**：`.compare-drawer .cmp-*` 那种写法在页面上一条都不
+   命中，表现成「整页没样式」。入口专属的东西只有壳内的弹性布局，单独列在文件末尾。
+   ⚠️ 本节零 backdrop-filter：玻璃只在壳上（glass-guard 纪律 1 的白名单）；
+   桶与结论一律走既有 badge 语义类（实心底，纪律 3），不新造颜色令牌；
+   ② 逐环节对比是真 <table>（纪律 2 管的是表格选择器上的 backdrop-filter，
+   本表实心零玻璃 —— 合规）；展开态的并排格仍是 grid。 */
+
+
+/* ---- 头部固定：标题 + 两栏身份 ---- */
+.cmp-head {
+  padding: var(--sp-4) var(--sp-5) var(--sp-3);
+  border-bottom: 1px solid var(--hairline); background: none;   /* 玻璃壳透出 */
+}
+.cmp-head-top { display: flex; align-items: center; gap: var(--sp-2); }
+.cmp-title {
+  font-size: var(--fs-h2); font-weight: var(--fw-semibold); letter-spacing: var(--ls-title);
+}
+.cmp-sub { font-size: var(--fs-caption); color: var(--faint); }
+.cmp-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-3);
+}
+.cmp-col {
+  min-width: 0; padding: var(--sp-2) var(--sp-3);
+  background: var(--bg2); border: 1px solid var(--neutral-line); border-radius: var(--r-control);
+}
+/* 两栏身份色：左（上一次）蓝、右（这一次）绿，两侧**都**上色。
+   此前只有右栏带 accent 描边、左栏什么都没有 —— 于是「哪栏是新的」要靠
+   「有描边 vs 没描边」这种不对称去推，而下方每一处并排格里都没有这道描边可推。
+   ⚠️ 两个颜色都是 tokens.css 里的既有色别名（--side-a-* / --side-b-*），零新 hex。 */
+.cmp-col.is-a { border-color: var(--side-a-line); }
+.cmp-col.is-b { border-color: var(--side-b-line); }
+.cmp-col-cap {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--fs-nano); color: var(--faint-on-sunken);
+  letter-spacing: var(--ls-caps-cjk); text-transform: uppercase;
+}
+.cmp-col.is-a .cmp-col-cap { color: var(--side-a-fg); }
+.cmp-col.is-b .cmp-col-cap { color: var(--side-b-fg); }
+
+/* 身份圆点：全站唯一一处定义，栏头 / 图例 / 并排格头共用同一颗
+   —— 三处各画一颗的下场是同屏三种尺寸的「同一个」圆点。
+   父级带 .is-a / .is-b 就取对应色；两处都没有时不画（无身份不上色）。 */
+.cdot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.is-a > .cdot { background: var(--side-a-dot); }
+.is-b > .cdot { background: var(--side-b-dot); }
+
+/* 颜色对照条：紧跟两栏身份，把「蓝=较早 / 绿=较新」写成话。
+   最后一句划清与分数色的界（同屏两个绿是两种意思）。 */
+.cmp-legend {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  margin-top: 6px; font-size: var(--fs-nano);
+}
+.cmp-legend .lg { display: inline-flex; align-items: center; gap: 5px; }
+.cmp-legend .lg.is-a { color: var(--side-a-fg); }
+.cmp-legend .lg.is-b { color: var(--side-b-fg); }
+.cmp-runid {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-body); font-weight: var(--fw-semibold); letter-spacing: var(--ls-num);
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cmp-runid .seq { color: var(--faint-on-sunken); margin-right: 6px; }
+.cmp-col-meta {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 5px;
+}
+
+/* ---- 指标区固定：逐量纲一行 ----
+   ② 区是**真表格**（2026-08-30 用户：「格式也不好，用表格方式，显示表格线」）——
+   行线 + 列线都画，线色走既有 hairline（不发明新 hex）。
+   ⚠️ 玻璃纪律 2 管的是 backdrop-filter 上表格选择器：本表零玻璃，实心 --bg2 面。 */
+.cmp-kpis {
+  background: var(--bg2); border-bottom: 1px solid var(--hairline);
+}
+.cmp-kpi-table {
+  width: calc(100% - 2 * var(--sp-5));
+  margin: 2px var(--sp-5) var(--sp-3);
+  border-collapse: collapse; table-layout: fixed;
+}
+.cmp-kpi-table th,
+.cmp-kpi-table td {
+  border: 1px solid var(--hairline);
+  padding: 4px var(--sp-2);
+  text-align: left; vertical-align: baseline;
+  /* th 默认加粗：字重全部改由语义类给（组标题/环节级标签/这一次数值），
+     免得「所有行头都粗」把层次抹平 */
+  font-weight: var(--fw-regular);
+}
+/* 数值三列定宽（table-layout: fixed 从表头那一行读宽），标签列吃剩余 */
+.cmp-kpi-table .ka,
+.cmp-kpi-table .kb { width: 84px; }
+.cmp-kpi-table .kd { width: 108px; }
+/* 分区标题 ①②③ 与报告页部件标题（reportview .rd-part-h）同层同大（17px/600）：
+   此前是 nano 大写 cap，比自己名下的组标题（13px）还小 —— 报告页 2026-08-30
+   刚修掉的「标题链倒挂」同款（/simplify 深度评审 F5 抓出）。两处的字级台阶
+   收敛成 token/共享类是已立档的后续（.u-table 变体一批一起做）。 */
+.cmp-kpis-cap {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 9px var(--sp-5) 5px;
+  font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); color: var(--text);
+}
+/* 数据行基准字号 --fs-sm（环节级）；评估器级再降一档（见 .is-sub）——
+   组标题(--fs-section) > 环节级(--fs-sm) > 评估器级(--fs-caption) 的字级层次
+   （用户 2026-08-30：「不都是标题大正文小么」）。
+   ⚠️ 单元格不改 display（td 上开 flex 会退出 table 布局，列就不对齐了）：
+   标签与量纲走行内排布，量纲用 margin 隔开。 */
+.cmp-kpi { font-size: var(--fs-sm); }
+.cmp-kpi .kl { color: var(--text); }
+.cmp-kpi .ku { margin-left: 6px; font-size: var(--fs-nano); color: var(--faint-on-sunken); }
+.cmp-kpi .ka,
+.cmp-kpi .kb,
+.cmp-kpi .kd {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data); text-align: right;
+}
+/* 数值两列：**不上身份色**（那是分数，绿要留给「达标」）。
+   两栏的分量差保持原样：较早那次退到 --muted，这一次是主角。 */
+.cmp-kpi .ka { color: var(--muted); }
+.cmp-kpi .kb { color: var(--text); font-weight: var(--fw-semibold); }
+/* 身份色只上到**表头那一行的两个栏名**（is-head 里才有色）——
+   它是列与栏的对应关系，不是数据 */
+.cmp-kpi.is-head .ka { color: var(--side-a-fg); }
+.cmp-kpi.is-head .kb { color: var(--side-b-fg); }
+.cmp-kpi .kd.is-better { color: var(--good); }
+.cmp-kpi .kd.is-worse { color: var(--bad); font-weight: var(--fw-semibold); }
+.cmp-kpi .kd.is-none { color: var(--faint-on-sunken); }
+.cmp-kpi.is-head {
+  font-size: var(--fs-nano); color: var(--faint-on-sunken);
+  letter-spacing: var(--ls-caps-cjk); text-transform: uppercase;
+}
+/* 表头底 = 纯 tint（与 .u-table thead 同规矩，零玻璃） */
+.cmp-kpi.is-head th { background: var(--tint-1); }
+.cmp-kpi.is-head .ka,
+.cmp-kpi.is-head .kb,
+.cmp-kpi.is-head .kd { font-family: var(--cjk); }
+/* 分母小字与「一侧缺这一维」的说明共用一档字号/色：两者都是**读数的前提**，
+   不是数本身 —— 谁更醒目一点都会跟上面那一行的数字抢。 */
+.cmp-kpi-note,
+.cmp-kpi-sub,
+.cmp-kpi-empty,
+.cmp-mgroup-sub {
+  font-size: var(--fs-nano); color: var(--faint-on-sunken); line-height: 1.6;
+}
+/* 表外的空态/加载/报错（loading、error、kpis-empty 是 .cmp-kpis 的直系子级，
+   不在表格里）：沿用区块自己的横向留白 */
+.cmp-kpis > .cmp-kpi-empty { padding: 4px var(--sp-5) 6px; }
+.cmp-kpi-empty.is-error { color: var(--bad); }
+/* 分母/缺数据说明行：跨全宽（colspan ⇒ 天然无列线），与上面那行之间的行线
+   抹掉（hidden 在集合边框冲突里赢过相邻的 solid）——它是上一行的脚注不是
+   又一条记录，表格线切在中间会把两者读成两回事。缩进一格挂在标签下面。 */
+.cmp-kpi-wide.is-note td { border-top-style: hidden; padding-top: 0; }
+.cmp-kpi-table .cmp-kpi-sub,
+.cmp-kpi-table .cmp-kpi-note,
+.cmp-kpi-table .cmp-mgroup-sub { padding-left: calc(var(--sp-2) + var(--sp-3)); }
+
+/* ---- 一个环节一 tbody（环节级读数 vs 评估器级读数分层住） ----
+   两层的区分用**字级 + 缩进 + 字重**：组标题升到 --fs-section semibold（与 ③ 区
+   .cmp-stage-h 同字号——同屏同层级同大小；此前它与数据行同为 --fs-sm，比 mono
+   数字看着还小，即用户说的「标题比正文小」）。组标题行的底只用既有 --tint-1，
+   不新造令牌。零 backdrop-filter（表格零玻璃，glass-guard 钉着）。 */
+.cmp-mgroup-h th { padding-top: 6px; padding-bottom: 4px; background: var(--tint-1); }
+.cmp-mgroup-h .gl {
+  font-size: var(--fs-section); font-weight: var(--fw-semibold); color: var(--text);
+}
+.cmp-kpi.is-lead .kl { font-weight: var(--fw-semibold); }
+/* 评估器级：字号降一档 + 标签缩进一格 + 色退 muted，读起来挂在环节级那一行下面 */
+.cmp-kpi.is-sub { font-size: var(--fs-caption); }
+.cmp-kpi.is-sub .kn { padding-left: calc(var(--sp-2) + var(--sp-3)); }
+.cmp-kpi.is-sub .kl { color: var(--muted); }
+
+/* ---- 正文滚动：逐环节三桶 ---- */
+.cmp-body { padding: var(--sp-4) var(--sp-5) var(--sp-8); }
+/* ③ 区标题：与 .cmp-kpis-cap 同形（分区编号一家人长一个样），但它在滚动正文里，
+   左右 padding 由 .cmp-body 自带，这里不再加 */
+.cmp-body-cap {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); color: var(--text);
+}
+.cmp-stage + .cmp-stage { margin-top: var(--sp-6); }
+.cmp-stage-h {
+  display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap;
+  margin: 0 0 var(--sp-2); font-size: var(--fs-section); font-weight: var(--fw-semibold);
+}
+.cmp-stage-h .ds {
+  font-family: var(--mono); font-size: var(--fs-nano); font-weight: var(--fw-regular);
+  color: var(--muted);
+}
+.cmp-stage-h .uw,
+.cmp-stage-h .bp {
+  font-size: var(--fs-nano); font-weight: var(--fw-regular); color: var(--faint);
+}
+.cmp-stage-h .bp { margin-left: auto; }
+.cmp-missing {
+  margin: 0; padding: var(--sp-2) var(--sp-3);
+  background: var(--bg2); border: 1px solid var(--neutral-line); border-radius: var(--r-control);
+  font-size: var(--fs-caption); color: var(--muted); line-height: 1.6;
+}
+/* 警示横幅：数据集在两次运行之间改过 → 逐用例对齐可能失真 */
+.cmp-stale {
+  display: flex; align-items: flex-start; gap: var(--sp-2);
+  margin: 0 0 var(--sp-2); padding: var(--sp-2) var(--sp-3);
+  background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: var(--r-control);
+  font-size: var(--fs-caption); color: var(--warn); line-height: 1.6;
+}
+.cmp-stale svg { flex: none; margin-top: 2px; }
+
+/* ---- 一个桶 ---- */
+.cmp-bucket { margin-top: var(--sp-3); }
+/* 有行的桶带左侧色条把行圈进桶里（2026-08-30 用户：「（桶）和下面的每一条啥
+   关系，看着好乱」——桶头与行此前在版面上是两截平铺，行读起来像独立的表）。
+   色条沿用桶的 badge 语义色：修好绿 / 改坏红 / 仍失败·分数跌琥珀 / 说明桶中性。
+   空桶不带条：一行头 + 一行判据，没有要圈的东西。 */
+.cmp-bucket.has-rows {
+  border-left: 2px solid var(--line-subtle);
+  padding-left: var(--sp-3);
+}
+.cmp-bucket.has-rows.is-fixed,
+.cmp-bucket.has-rows.is-scoreUp { border-left-color: var(--good); }
+.cmp-bucket.has-rows.is-broken { border-left-color: var(--bad); }
+.cmp-bucket.has-rows.is-still,
+.cmp-bucket.has-rows.is-scoreDown { border-left-color: var(--warn); }
+.cmp-bucket-head { display: flex; align-items: center; gap: 6px; }
+.cmp-bucket-head .n {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold);
+}
+.cmp-bucket-head .uw { font-size: var(--fs-nano); color: var(--faint); }
+/* 桶级说明句已整句删除（2026-08-30 终裁，版面与 title 都不留） */
+
+/* ---- 一条对齐单位 ---- */
+.cmp-pair { border-top: 1px solid var(--hairline-soft); }
+.cmp-pair:first-of-type { margin-top: 5px; }
+/* 深链落点（评估分析页两段卡的引用 chip 点过来）：左侧 accent 竖条把这一行
+   从一屏行里挑出来。实心色条、零玻璃，不新造令牌。 */
+.cmp-pair.is-focus { box-shadow: inset 2px 0 0 var(--accent-fg); }
+.cmp-pair-head {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 5px 2px; background: none; border: 0; color: inherit;
+  text-align: left; cursor: pointer; font: inherit;
+}
+.cmp-pair-head:hover { background: var(--tint-2); }
+.cmp-pair-head:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+.cmp-pair-head .chev {
+  flex: none; color: var(--faint); transition: transform .14s ease;
+}
+.cmp-pair.is-open .cmp-pair-head .chev { transform: rotate(90deg); }
+.cmp-pair-head .pn {
+  font-size: var(--fs-sm); min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.cmp-pair-head .ps {
+  flex: none; font-size: var(--fs-nano); color: var(--faint);
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 两个结论词：**文字色归过/挂，下划线归哪一次**。两套语义各占一个通道 ——
+   把身份也塞进文字色，就会出现「绿字」既可能是通过也可能是这一次。 */
+.cmp-pair-head .pv {
+  flex: none; font-size: var(--fs-nano); color: var(--muted);
+  padding-bottom: 1px; border-bottom: 2px solid transparent;
+}
+.cmp-pair-head .pv.is-side-a { border-bottom-color: var(--side-a-line); }
+.cmp-pair-head .pv.is-side-b { border-bottom-color: var(--side-b-line); }
+.cmp-pair-head .pv.is-pass { color: var(--good); }
+.cmp-pair-head .pv.is-fail { color: var(--bad); font-weight: var(--fw-semibold); }
+.cmp-pair-head .pv.is-none,
+.cmp-pair-head .pv.is-absent { color: var(--faint); }
+.cmp-pair-head .pv-arrow { flex: none; font-size: var(--fs-nano); color: var(--faint); }
+/* 分数桶收起态的那对数（`0.10 → 1.00`）：等宽 + tabular，好让同一桶里多行的
+   小数点对齐（这一桶存在的意义就是让人扫一眼看出谁动得多）。
+   ⚠️ 方向色只有两档且**不用 --bad**：这些用例两次都通过了，跌了是早期信号不是
+   故障 —— 与 BUCKET_CLASS 里 scoreDown 走 warn 的同一条理由。 */
+.cmp-pair-head .pd {
+  flex: none; font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano); letter-spacing: var(--ls-num);
+}
+.cmp-pair-head .pd.is-up { color: var(--good); }
+.cmp-pair-head .pd.is-down { color: var(--warn); }
+.cmp-pair-why {
+  margin: 0 0 4px 20px; font-size: var(--fs-nano); color: var(--faint); line-height: 1.6;
+}
+
+/* ---- 展开态：左右并排 ---- */
+.cmp-pair-body { padding: 2px 2px var(--sp-3) 20px; }
+.cmp-field { margin-bottom: var(--sp-2); }
+.cmp-field .fl {
+  font-size: var(--fs-nano); color: var(--faint-on-sunken); margin-bottom: 2px;
+  letter-spacing: var(--ls-caps-cjk); text-transform: uppercase;
+}
+/* 并排格：第一行是两个栏头（cmp-2h），第二行才是两格内容 ——
+   auto-flow 顺着排，所以 JSX 里的四个子元素正好落成 2×2。 */
+.cmp-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3px var(--sp-2); }
+.cmp-2h {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--fs-nano); letter-spacing: var(--ls-caps-cjk);
+}
+.cmp-2h.is-a { color: var(--side-a-fg); }
+.cmp-2h.is-b { color: var(--side-b-fg); }
+/* 长文不截断也不给「展开全文」：一侧展开会把另一侧顶走，并排就没了意义 ——
+   改成格内定高滚动，两侧永远同时在视野里 */
+.cmp-tx {
+  min-width: 0; max-height: 190px; overflow: auto;
+  padding: var(--sp-2); background: var(--bg2);
+  border: 1px solid var(--neutral-line); border-radius: var(--r-control);
+  font-size: var(--fs-caption); color: var(--muted); line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word;
+}
+/* 并排格的身份：两侧都上，且**只上左边一道粗边**（描边一圈会跟卡片抢层级）。
+   `is-both`（两次输入逐字相同、只摆一格）故意什么都不加 —— 它不属于任何一栏。 */
+.cmp-tx.is-a { border-left: 2px solid var(--side-a-line); }
+.cmp-tx.is-b { border-left: 2px solid var(--side-b-line); }
+.cmp-absent { color: var(--faint-on-sunken); }
+.cmp-mark {
+  display: inline-block; margin-right: 6px; padding: 0 5px;
+  background: var(--warn-bg); border-radius: var(--r-badge);
+  font-size: var(--fs-nano); color: var(--warn);
+}
+.cmp-vh { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; }
+.cmp-vh .vs {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption); color: var(--text); font-weight: var(--fw-semibold);
+}
+.cmp-vh .vs.is-none {
+  font-family: var(--cjk); font-weight: var(--fw-regular); color: var(--muted);
+}
+.cmp-vh .vp { font-size: var(--fs-nano); }
+.cmp-vh .vp.is-pass { color: var(--good); }
+.cmp-vh .vp.is-fail { color: var(--bad); }
+
+/* 窄屏：两栏改上下堆叠（抽屉本身已被 Drawer 夹到 92vw） */
+@media (max-width: 720px) {
+  .cmp-cols,
+  .cmp-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- 底部提示条 ---- */
+.cmp-foot {
+  padding: var(--sp-2) var(--sp-5);
+  border-top: 1px solid var(--hairline);
+  font-size: var(--fs-nano); color: var(--faint);
+}
+
+/* ---------- 口径披露条（两次是不是同一把尺子量的） ----------
+   放在两栏身份与逐量纲指标之间：先知道「能不能比」，再去看「差多少」。
+   四档语义：blocking 用 --bad-*（比出来的三桶已经失去意义）、diff 用 --warn-*
+   （能比但要知道差在哪）、unknown 中性（平台没记，不是「相同」）、same 用 --good
+   （这一条**放行**了下面所有涨跌的读法，是好消息不是提示）。
+   same 只给 .cn 上色、不动 .ct：绿字标题足够表达「这条过了」，正文也刷绿会让
+   一条无需行动的信息看着像告警的对立面在抢注意力。 */
+.cmp-cal { border-bottom: 1px solid var(--hairline); background: var(--bg2); }
+/* ① 与 ②③ 同层同大（见 .cmp-kpis-cap 注释） */
+.cmp-cal-cap {
+  padding: 9px var(--sp-5) 4px;
+  font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); color: var(--text);
+}
+/* 一句总结论（取最差那一档）。四档各上自己的色，且**整句**上色 ——
+   与条目里 same 只给 .cn 上色不同：这一句本身就是那个结论，正文即标题。 */
+.cmp-cal-verdict {
+  padding: 3px var(--sp-5) 5px;
+  font-size: var(--fs-caption); line-height: 1.6; color: var(--muted);
+}
+.cmp-cal-verdict.is-blocking { color: var(--bad); font-weight: var(--fw-semibold); }
+.cmp-cal-verdict.is-diff { color: var(--warn); }
+.cmp-cal-verdict.is-same { color: var(--good); }
+.cmp-cal-verdict.is-unknown { color: var(--faint); }
+/* 口径名那一列 72px → 128px：口径名现在**带环节限定词**（「回归测试 · 评估器」
+   七个字 + 分隔符），72px 容不下，会折成三行、把两侧值挤到看不出对齐。
+   这不是审美调整 —— 折行后两列值的起笔位置不再一致。
+   表格化（2026-08-30 用户）：三列网格（口径项 | 上一次 | 这一次），侧别词只在
+   表头说一次、列名直接带 run 身份（#N · 时间）；说明 ct 跨全宽另起一行 ——
+   塞进第四列会把两列值挤扁，而说明常常是三四十字的整句。 */
+.cmp-cal-row {
+  display: grid; grid-template-columns: 128px minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-2); align-items: baseline;
+  padding: 4px var(--sp-5) 6px; border-top: 1px solid var(--hairline-soft);
+  font-size: var(--fs-caption); line-height: 1.65;
+}
+.cmp-cal-row .cn { color: var(--faint-on-sunken); font-size: var(--fs-nano); }
+.cmp-cal-row .ca,
+.cmp-cal-row .cb {
+  min-width: 0;
+  font-family: var(--mono); font-size: var(--fs-nano); color: var(--text);
+  word-break: break-word;
+}
+/* 表头行：侧别词跟着栏身份上色（与逐环节对比表头同规矩——身份色只上列名，
+   不上数据）；run 身份用 mono 弱一档，别跟侧别词抢 */
+.cmp-cal-row.is-head { border-top: 0; padding-top: 2px; padding-bottom: 3px; }
+.cmp-cal-row.is-head .ch { min-width: 0; font-size: var(--fs-nano); }
+.cmp-cal-row.is-head .ch .cs { letter-spacing: var(--ls-caps-cjk); }
+.cmp-cal-row.is-head .ch.is-a .cs { color: var(--side-a-fg); }
+.cmp-cal-row.is-head .ch.is-b .cs { color: var(--side-b-fg); }
+.cmp-cal-row.is-head .ch .cid {
+  margin-left: 6px; font-family: var(--mono); color: var(--faint-on-sunken);
+  font-variant-numeric: var(--numeric-data);
+}
+.cmp-cal-row .ct {
+  grid-column: 1 / -1; display: block; margin-top: 1px;
+  color: var(--faint); font-size: var(--fs-nano);
+}
+.cmp-cal-row.is-blocking .cn { color: var(--bad); }
+.cmp-cal-row.is-blocking .ct { color: var(--bad); }
+.cmp-cal-row.is-diff .cn { color: var(--warn); }
+.cmp-cal-row.is-same .cn { color: var(--good); }
+.cmp-cal-row.is-unknown .ca,
+.cmp-cal-row.is-unknown .cb { font-family: var(--cjk); color: var(--faint-on-sunken); }
+
+/* ---------- 入口专属：抽屉壳内的弹性布局 ----------
+   .drawer-panel 是 column flex 容器（base.css），四区各自定死伸缩，正文独立滚动。
+   页面上没有这个约束（整页跟着 window 滚），所以这几条**只**给抽屉。 */
+.compare-drawer .cmp-head,
+.compare-drawer .cmp-cal,
+.compare-drawer .cmp-kpis,
+.compare-drawer .cmp-foot { flex: none; }
+.compare-drawer .cmp-body { flex: 1; overflow: auto; }

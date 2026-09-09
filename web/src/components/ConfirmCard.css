@@ -1,0 +1,58 @@
+/* ConfirmCard —— 居中确认卡（window.confirm 的玻璃风格替代）。
+   玻璃纪律：零新增 blur——mask 是半透明纯色（无 backdrop-filter，沿用
+   .drawer-mask 同款底色），卡身实心 --bg2（纪律 2：承文字的小面必须实心）。
+   焦点环由 ui.css 的 .btn:focus-visible 统一提供（outline 型，纪律 4）。 */
+
+.confirm-mask {
+  position: fixed; inset: 0; z-index: var(--z-overlay);
+  background: rgba(2, 6, 18, .55);
+  animation: confirm-fade var(--dur-fast) var(--ease);
+}
+
+.confirm-card {
+  position: fixed; z-index: var(--z-overlay);
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 400px; max-width: calc(100vw - 32px);
+  padding: var(--sp-5);
+  background: var(--bg2);
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: var(--r-overlay);
+  box-shadow: var(--sh-overlay);
+  animation: confirm-pop var(--dur-fast) var(--ease);
+}
+
+.confirm-card-title {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.confirm-card-body {
+  margin: 0 0 var(--sp-5);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--faint-on-sunken);   /* 实心凹陷面上的辅助文字档（--faint 不达标） */
+}
+.confirm-card-body b { color: var(--text); font-weight: var(--fw-medium); }
+
+.confirm-card-actions {
+  display: flex; justify-content: flex-end; gap: var(--sp-2);
+}
+
+/* 危险动作：红色实心 + 深字（同主按钮「绿底深字」对比度模式；
+   白字压 #EF4444 只有 ~3.8，不达标） */
+.btn.confirm-danger {
+  background: var(--bad-dot);
+  border-color: var(--bad-dot);
+  color: var(--text-on-accent);
+}
+.btn.confirm-danger:hover {
+  background: var(--bad);
+  border-color: var(--bad);
+}
+
+@keyframes confirm-fade { from { opacity: 0; } }
+@keyframes confirm-pop {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.97); }
+}

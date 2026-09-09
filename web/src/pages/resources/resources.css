@@ -1,0 +1,300 @@
+/* 资源库页 —— 页面级布局补充。
+   通用形态（按钮/徽章/表格骨架/卡片/表单/chip）已在 styles/ui.css，
+   本文件只留：列宽微调、行内展开表单布局、tab 下划线（原型结构，令牌走 tokens.css）。 */
+
+.res-search { width: 200px; }
+.res-error { color: var(--bad); font-size: var(--fs-caption); }
+
+/* 评估器表描述列：全文上屏自然折行（用户 2026-08-31：描述要看得全），
+   限宽防长文挤压其余列 */
+.res-eval-desc { max-width: 45%; word-break: break-word; }
+
+/* 原始文本拆不出档位时的提示：不是错误（用户点了就该切），用琥珀警示色。
+   小字底一律实心（--bg2），不带 backdrop-filter —— 玻璃只上卡片与浮层。 */
+.res-parse-note {
+  max-width: 720px;
+  margin: 0 0 var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg2);
+  border: 1px solid var(--warn-line);
+  border-radius: var(--r-control);
+  color: var(--warn);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+}
+
+/* 双向锚定：抽屉打开时来源行高亮（表格零玻璃——纯 tint + 左侧强调条） */
+.u-table tbody tr.row-anchored td { background: var(--accent-bg); }
+.u-table tbody tr.row-anchored td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ---------- 行内展开（只剩「查看」详情行；表单已全部迁进抽屉，ADR-0011） ---------- */
+.res-detail-cell {
+  background: var(--bg2);
+  padding: 0 !important;
+  height: auto !important;
+}
+.res-detail {
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  padding: var(--sp-3) var(--pad-cell-x);
+}
+
+/* 行内分块表单：凹陷底 + 顶部 2px 蓝条（原型 .inlineform 的结构，用令牌重写） */
+.res-inlineform {
+  background: var(--bg2);
+  border-top: 2px solid var(--accent);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+}
+.res-if-head {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.res-if-title { font-size: var(--fs-body); font-weight: 600; }
+
+.res-frow {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 240px);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.res-fld { display: block; min-width: 0; }
+.res-fld-narrow { max-width: 360px; margin-bottom: var(--sp-3); }
+
+.res-fsec {
+  padding-top: var(--sp-3);
+  margin-top: var(--sp-3);
+  /* 分节虚线 .16：与 .u-empty 同档，glass-guard 登记例外 */
+  border-top: 1px dashed rgba(255, 255, 255, .16);
+}
+.res-fsec:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+.res-fsec-h {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-sm); font-weight: 600;
+}
+.res-stepno {
+  flex: none; width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-bg); color: var(--accent-fg);
+  font-size: var(--fs-micro); line-height: 18px; text-align: center;
+}
+.res-wide { max-width: 620px; }
+
+.res-rowlist {
+  list-style: none; margin: 0 0 var(--sp-2); padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  max-width: 720px;
+}
+.res-rowlist li { display: flex; align-items: center; gap: var(--sp-2); }
+.res-fno { flex: none; width: 18px; text-align: right; font-size: var(--fs-caption); }
+
+.res-rubric { max-width: 720px; margin-bottom: var(--sp-2); }
+.res-score { text-align: center; }
+
+/* 预览折叠 */
+.res-fold {
+  margin-top: var(--sp-4);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-control);
+  background: var(--bg);          /* 凹陷面里再嵌一层：更深一档 */
+  padding: var(--sp-2) var(--sp-3);
+  max-width: 720px;
+}
+.res-fold > summary {
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.res-fold[open] > summary { margin-bottom: var(--sp-2); color: var(--text); }
+.res-prompt-note { margin-bottom: var(--sp-2); font-size: var(--fs-micro); }
+.res-prompt {
+  margin: 0 0 var(--sp-1);
+  padding: var(--sp-3);
+  background: var(--bg2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-control);
+  font-size: var(--fs-caption);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.res-if-foot {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--sp-4); flex-wrap: wrap;
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--hairline);
+}
+.res-if-foot-l { display: flex; flex-direction: column; gap: var(--sp-1); align-items: flex-start; }
+.res-if-foot-r { display: flex; gap: var(--sp-2); }
+
+/* ---------- 表单抽屉（ADR-0011 浮层三分法：表单一律右侧抽屉） ----------
+   壳形态（玻璃底 + 1 层 blur）已在 base.css 的 .drawer-panel，本节零新增 blur：
+   只排头部身份行与内容容器。抽屉里的表单不再要 .res-inlineform 的
+   「凹陷底 + 顶部蓝条」（那是行内展开的视觉语言），故在抽屉内中和掉。 */
+.res-form-drawer .drawer-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--hairline);
+}
+.res-form-drawer .drawer-head h2 {
+  margin: 0; font-size: var(--fs-h2);
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+/* 身份行：在编辑什么对象（数据集名 / 评估器名），mono 弱一档 */
+.res-drawer-identity {
+  font-family: var(--mono); font-size: var(--fs-caption);
+  font-weight: var(--fw-regular); color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.res-form-drawer .drawer-body {
+  flex: 1; overflow: auto; padding: var(--sp-5);
+}
+/* 抽屉内的表单：去掉行内展开的壳装饰（底色/蓝条/内边距由抽屉承担） */
+.res-form-drawer .res-inlineform {
+  background: none; border-top: 0; padding: 0;
+}
+/* 抽屉是单列窄栏：两列字段行退回单列，各种 max-width 限制解除 */
+.res-form-drawer .res-frow { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
+.res-form-drawer .res-fld-narrow,
+.res-form-drawer .res-wide,
+.res-form-drawer .res-rowlist,
+.res-form-drawer .res-rubric,
+.res-form-drawer .res-fold,
+.res-form-drawer .res-gen-save { max-width: none; }
+.res-form-drawer .res-gen-save { flex-wrap: wrap; }
+.res-form-drawer .res-if-head { display: none; }  /* 标题已由抽屉头承担 */
+
+/* ---------- 下块：下划线 tab（原型 .tabs 结构，令牌重写） ---------- */
+.res-tabs {
+  display: flex; gap: var(--sp-6);
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: var(--sp-4);
+}
+.res-tab {
+  background: none; border: 0; cursor: pointer;
+  padding: 0 2px 10px;
+  font-family: var(--cjk); font-size: var(--fs-body);
+  color: var(--muted);
+  display: inline-flex; align-items: center; gap: 6px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.res-tab:hover { color: var(--text); }
+.res-tab[aria-selected="true"] {
+  color: var(--accent-fg);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+.res-tab:focus-visible { outline: var(--focus-outline); outline-offset: 2px; box-shadow: none; border-radius: var(--r-control); }
+
+.res-tablefoot {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding-top: var(--sp-3); margin-top: 2px;
+}
+.res-tablefoot .spacer { flex: 1; }
+.res-footnote { margin: var(--sp-3) 0 0; font-size: var(--fs-caption); }
+
+.res-badges { display: inline-flex; gap: var(--sp-1); flex-wrap: wrap; }
+
+/* ---------- 模拟测试 tab（原型 regression-split） ---------- */
+/* 说明条：卡片内底部凹陷底说明（小字用 --faint-on-sunken，纪律 2） */
+.sim-note {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: var(--sp-3) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-control);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+}
+.sim-note b { color: var(--muted); font-weight: 500; }
+/* 人设列：有=✓ + 摘要截断，无=— */
+.persona-yes { color: var(--good); font-weight: 600; margin-right: 4px; }
+.persona-text {
+  color: var(--muted);
+  display: inline-block; max-width: 260px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* 红队用例只读列表 */
+.res-case-list {
+  list-style: none; margin: 0; padding: var(--sp-3) var(--pad-cell-x);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.res-case-list li {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+.res-case-input { min-width: 0; word-break: break-word; }
+
+/* 红队生成器 */
+.res-cats { display: flex; flex-direction: column; gap: var(--sp-1); }
+.res-cat {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+.res-gen-actions {
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+/* 生成中的心跳活性行（useLiveness 三档）：语义色只上状态点与这行字 */
+.res-liveness {
+  display: flex; align-items: center; gap: 6px;
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-micro); color: var(--muted);
+  font-variant-numeric: var(--numeric-data);
+}
+.res-liveness .dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--good-dot); }
+.res-liveness.waiting { color: var(--warn); }
+.res-liveness.waiting .dot { background: var(--warn-dot); }
+.res-liveness.stale { color: var(--bad); }
+.res-liveness.stale .dot { background: var(--bad-dot); }
+.res-gen-save {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  max-width: 480px;
+}
+
+/* AI 生成用例/任务（GenCasesForm）附件清单 */
+.res-att-list {
+  list-style: none; margin: var(--sp-1) 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-1);
+}
+.res-att-list li {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+
+/* ---------- 跨 Agent 表现（评估器页顶部面板，ADR-0016 舰队级） ---------- */
+.res-usage { margin-bottom: var(--sp-4); }
+.res-usage-chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+/* Agent chip 是 <a>：复用 .chip 药丸骨架（实心 --bg2，零透明），去下划线 */
+.res-usage-chip { text-decoration: none; }
+.res-usage-chip .n { color: var(--text); }
+/* 未过线 chip：琥珀警示，令牌与 .badge.warn 同源 */
+.res-usage-chip.warn {
+  border-color: var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.res-usage-chip.warn .n,
+.res-usage-chip.warn:hover { color: var(--warn); }
+.res-usage-chip.warn:hover { background: var(--warn-bg); }
+/* 「连续 N 次」尾注：chip 内竖线隔开的小字 */
+.res-usage-streak {
+  font-size: var(--fs-nano);
+  padding-left: var(--sp-1);
+  border-left: 1px solid var(--warn-line);
+}
+
+/* 用例来源 chip（ADR-0017 D1：坏例入集写的 source）：链接形态的 chip，深链报告页该行 */
+.res-case-source { text-decoration: none; height: 20px; padding: 0 var(--sp-2); font-size: var(--fs-micro); flex: none; }
+.res-case-source:hover { color: var(--accent-fg); text-decoration: none; }
+.res-ds-table td .cell-main + .badge { margin-left: var(--sp-2); }

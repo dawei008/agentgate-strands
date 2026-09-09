@@ -1,0 +1,339 @@
+/* 独立报告页（#/report/<run_key>）· 变体 A「评估器优先」（批 report-redesign-a）。
+   版面契约 = .scratch/report-redesign/variant-a-evaluators.html（用户 2026-09-04 选定），
+   自上而下：页头（PageHeader）→ 元信息行 → 结论一句 → hero 四格 → 成本时延小条 →
+   评估器 tile → 行 × 评估器 矩阵（每环节一张卡）→ 问题条目（IssueLedger）→ 页脚。
+   ⚠️ 类名前缀 `.rpg-`：`.rp-*` 被 reportview.css 的报告正文占着（.rp-h / .rp-p …），
+   `.rd-*` 是抽屉视图的；撞上去改的是别人的面。
+   玻璃纪律：hero 复用 styles/ui.css 的 .kpi-strip（全站唯一玻璃卡，纪律 1 白名单）；
+   其余全部实心 .card / 真 <table>（.u-table），本文件零 backdrop-filter；颜色只给状态；
+   数字一律 mono + tabular-nums（--numeric-data）。 */
+
+.rpage { display: flex; flex-direction: column; }
+.rpage-key {
+  max-width: 42ch;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--muted);
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+}
+.rpage-body { display: flex; flex-direction: column; gap: var(--gap-card); }
+.rpage-body > .card { margin-bottom: 0; }
+
+/* ---- 元信息行：开始 · 用时 · agent · 版本 · 目标线 · 触发 ---- */
+.rpg-meta {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-6);
+  font-size: var(--fs-sm); color: var(--text);
+}
+.rpg-meta .k { color: var(--faint); margin-right: var(--sp-2); letter-spacing: var(--ls-caps-cjk); }
+.rpg-meta .k.lat { font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: var(--ls-caps); text-transform: uppercase; }
+.rpg-meta .v { font-family: var(--mono); font-variant-numeric: var(--numeric-data); letter-spacing: var(--ls-num); }
+
+/* ---- ② 结论一句：badge + 一句现算事实句；三态色只给 badge 与数字，正文保持主文字色 ---- */
+.rpg-verdict {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  margin: 0; max-width: 62em;
+  font-size: var(--fs-h2); line-height: var(--lh-snug);
+  font-variant-numeric: var(--numeric-data);
+}
+.rpg-verdict .badge { flex: none; margin-top: 2px; height: var(--sp-6); font-size: var(--fs-caption); padding: 0 var(--sp-3); }
+.rpg-ev { font-family: var(--mono); font-weight: var(--fw-medium); letter-spacing: var(--ls-num); }
+.rpg-n { font-family: var(--mono); font-variant-numeric: var(--numeric-data); font-weight: var(--fw-medium); letter-spacing: var(--ls-num); }
+.rpg-label { font-family: var(--mono); color: var(--muted); }
+.rpg-verdict-note { color: var(--muted); font-size: var(--fs-sm); font-weight: var(--fw-regular); }
+.rpg-verdict.is-neutral .badge { color: var(--muted); }
+.rpg-sid { font-family: var(--mono); font-variant-numeric: var(--numeric-data); letter-spacing: var(--ls-num); color: var(--accent-fg); text-decoration: none; }
+.rpg-sid:hover { color: var(--accent-active); text-decoration: underline; }
+
+/* ---- ③ hero：.kpi-strip 之上只补两件——首格 1.4fr 与 dash 态 ---- */
+.rpg-hero { grid-template-columns: 1.4fr repeat(var(--kpi-cols, 3), minmax(0, 1fr)); margin-bottom: 0; }
+.rpg-hero .kpi-val.is-dash { color: var(--muted); }
+/* 「部分」徽章贴在成本数字右侧（复用 ui.css .badge，中性实心底，颜色不加） */
+.rpg-hero .kpi-val .badge { margin-left: var(--sp-2); vertical-align: middle; }
+.rpg-hero .kpi-foot .mono { color: var(--text); }
+.rpg-hero .kpi-foot .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; background: var(--neutral-dot); }
+.rpg-hero .kpi-foot .dot.good { background: var(--good-dot); }
+.rpg-hero .kpi-foot .dot.warn { background: var(--warn-dot); }
+
+/* ---- ④ 成本时延小条 ---- */
+.rpg-perf {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-6);
+  padding: 0 var(--sp-1); margin-top: calc(var(--gap-card) * -1 + var(--sp-3));
+  font-size: var(--fs-sm); color: var(--text);
+}
+.rpg-perf .k { color: var(--faint); margin-right: var(--sp-2); letter-spacing: var(--ls-caps-cjk); }
+.rpg-perf .k.lat { font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: var(--ls-caps); text-transform: uppercase; }
+.rpg-perf .v { font-family: var(--mono); font-variant-numeric: var(--numeric-data); letter-spacing: var(--ls-num); }
+.rpg-perf .note { color: var(--muted); }
+
+/* ---- 区块头（评估器 / 多环节的环节名） ---- */
+.rpg-section { display: flex; flex-direction: column; gap: var(--gap-card); }
+.rpg-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.rpg-sec-head h2 { margin: 0; font-size: var(--fs-card-title); font-weight: var(--fw-semibold); letter-spacing: var(--ls-title); }
+.rpg-sec-sub { font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: var(--numeric-data); }
+.rpg-sec-sub .mono { color: var(--text); }
+
+/* ---- ⑤ 评估器 tile：四列实心卡；未过线左侧 2px 警示色条（颜色只给状态） ---- */
+.rpg-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap-card); }
+.rpg-tile {
+  position: relative; display: flex; flex-direction: column; gap: var(--sp-3);
+  padding: var(--pad-card) var(--pad-card-x); margin-bottom: 0; overflow: visible;
+}
+.rpg-tile.is-warn::before {
+  content: ""; position: absolute; left: 0; top: var(--sp-5); bottom: var(--sp-5); width: 2px;
+  background: var(--warn-dot); border-radius: 0 var(--r-pill) var(--r-pill) 0;
+}
+.rpg-tile-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.rpg-tile-name { font-weight: var(--fw-medium); font-size: var(--fs-body); letter-spacing: var(--ls-num); display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; }
+.rpg-tile-stage { font-family: var(--cjk); font-size: var(--fs-micro); color: var(--faint); font-weight: var(--fw-regular); }
+.rpg-tile-num {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-metric); font-weight: var(--fw-semibold); line-height: var(--lh-tight); letter-spacing: var(--ls-num);
+}
+.rpg-tile-num .lbl { font-family: var(--cjk); font-size: var(--fs-caption); font-weight: var(--fw-regular); color: var(--faint); letter-spacing: 0; }
+.rpg-tile-bar { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-caption); color: var(--muted); }
+.rpg-tile-bar .rpg-meter { flex: 1; width: auto; }
+.rpg-tile-bar .mono { color: var(--text); font-variant-numeric: var(--numeric-data); }
+.rpg-tile-sub { margin: 0; display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-sm); color: var(--muted); border-top: 1px solid var(--hairline); padding-top: var(--sp-3); }
+.rpg-tile-sub .row { display: flex; justify-content: space-between; gap: var(--sp-3); }
+.rpg-tile-sub dt { margin: 0; }
+.rpg-tile-sub dd { margin: 0; color: var(--text); font-variant-numeric: var(--numeric-data); text-align: right; letter-spacing: var(--ls-num); }
+
+/* ---- ⑥ 矩阵卡（真 table，密度令牌不动） ---- */
+.rpg-mx-card { overflow: hidden; }
+.rpg-legend { display: flex; align-items: center; gap: var(--sp-4); font-size: var(--fs-micro); color: var(--muted); }
+.rpg-legend .dot, .rpg-cell .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--neutral-dot); flex: none; vertical-align: middle; }
+.rpg-legend .dot.good, .rpg-cell .dot.good { background: var(--good-dot); }
+.rpg-legend .dot.warn, .rpg-cell .dot.warn { background: var(--warn-dot); }
+.rpg-legend .dot.bad,  .rpg-cell .dot.bad  { background: var(--bad-dot); }
+.rpg-mx-empty { margin: 0; padding: var(--pad-card) var(--pad-card-x); color: var(--muted); font-size: var(--fs-sm); }
+
+.rpg-mx col.c-name { width: 24%; }
+.rpg-mx col.c-lat { width: 7%; }
+.rpg-mx.is-redteam col.c-name { width: 34%; }
+.rpg-mx.is-redteam col.c-strat { width: 30%; }
+.rpg-mx thead th.rpg-th-ev { font-family: var(--mono); font-size: var(--fs-caption); letter-spacing: var(--ls-num); color: var(--text); text-transform: none; }
+.rpg-mx thead th.rpg-th-ev .m { color: var(--muted); font-weight: var(--fw-regular); margin-left: var(--sp-2); font-variant-numeric: var(--numeric-data); }
+.rpg-mx thead th.rpg-th-ev.is-under { box-shadow: inset 0 -2px 0 var(--warn-dot); }
+.rpg-mx tbody td { height: auto; vertical-align: top; }
+.rpg-mx tbody td.rpg-name { padding: var(--sp-2) var(--pad-cell-x); vertical-align: middle; }
+.rpg-mx tbody td.rpg-cell-td { padding: 0; border-left: 1px solid var(--hairline-soft); }
+.rpg-mx tbody td.rpg-lat { padding: var(--sp-2) var(--pad-cell-x); vertical-align: middle; color: var(--muted); font-variant-numeric: var(--numeric-data); }
+.rpg-mx tbody td.rpg-strat { padding: var(--sp-2) var(--pad-cell-x); vertical-align: middle; color: var(--muted); }
+.rpg-mx tbody tr.rpg-row:hover td { background: var(--tint-2); }
+.rpg-mx tbody tr.rpg-row.is-target td.rpg-name { box-shadow: inset 2px 0 0 var(--accent); }
+.rpg-name-line { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; }
+.rpg-no { font-size: var(--fs-caption); color: var(--faint); font-variant-numeric: var(--numeric-data); flex: none; }
+.rpg-headline { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); min-width: 0; }
+.rpg-name-sub { display: flex; align-items: center; gap: var(--sp-1); flex-wrap: wrap; margin-top: 2px; font-size: var(--fs-micro); color: var(--faint); font-variant-numeric: var(--numeric-data); }
+.rpg-name-cat { font-family: var(--cjk); }
+.rpg-note { margin-left: var(--sp-1); }
+
+.rpg-cell {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; min-height: calc(var(--h-row-tall) + var(--sp-2));
+  padding: var(--sp-2) var(--pad-cell-x);
+  background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.rpg-cell:hover { background: var(--tint-2); }
+.rpg-cell[aria-expanded="true"] { background: var(--surface-3); box-shadow: var(--sh-ring); }
+.rpg-cell:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+.rpg-cell-score { display: flex; align-items: center; gap: var(--sp-2); font-variant-numeric: var(--numeric-data); font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); letter-spacing: var(--ls-num); line-height: var(--lh-tight); }
+.rpg-cell.is-none .rpg-cell-score { font-size: var(--fs-sm); font-weight: var(--fw-regular); color: var(--muted); }
+.rpg-cell-label { font-size: var(--fs-micro); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.rpg-cell[aria-expanded="true"] .rpg-cell-label { color: var(--faint-on-sunken); }
+.rpg-cell-empty { display: block; padding: var(--sp-2) var(--pad-cell-x); color: var(--faint); }
+/* 只用上报数据评估：no_trace 行的格 —— 不是分也不是评估失败，中性字 + 无色点 */
+.rpg-cell.is-trace .rpg-cell-score { font-size: var(--fs-sm); font-weight: var(--fw-regular); color: var(--muted); }
+.rpg-trace { margin-left: var(--sp-1); }
+.rpg-breach { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.rpg-breach.is-fail { color: var(--bad); }
+.rpg-breach.is-pass { color: var(--good); }
+.rpg-breach.is-none { color: var(--muted); font-weight: var(--fw-regular); }
+
+/* 格详情行：凹陷实心面（--surface-2），左 reason / 右原文对照 */
+.rpg-mx tbody tr.rpg-detail td { background: var(--surface-2); border-top: 0; padding: var(--sp-4) var(--pad-cell-x) var(--sp-5); }
+.rpg-mx tbody tr.rpg-detail:hover td { background: var(--surface-2); }
+.rpg-detail-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--sp-6); }
+.rpg-detail-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); font-size: var(--fs-sm); color: var(--faint-on-sunken); flex-wrap: wrap; }
+.rpg-detail-head .rpg-ev { color: var(--text); }
+.rpg-detail-head .sc { font-variant-numeric: var(--numeric-data); font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); color: var(--text); letter-spacing: var(--ls-num); }
+.rpg-detail-head .who { color: var(--faint-on-sunken); }
+.rpg-reason { color: var(--text); line-height: var(--lh-body); min-width: 0; }
+.rpg-excerpt { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.rpg-excerpt .k { font-size: var(--fs-micro); color: var(--faint-on-sunken); letter-spacing: var(--ls-caps-cjk); margin-bottom: 2px; }
+.rpg-sids { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); }
+
+/* 长文钳：默认 --rpg-lines 行，展开后全文；pre-wrap 保住回复里的换行 */
+.rpg-clamp {
+  display: -webkit-box; -webkit-line-clamp: var(--rpg-lines, 2); -webkit-box-orient: vertical;
+  overflow: hidden; white-space: pre-wrap; word-break: break-word;
+  font-size: var(--fs-sm); color: var(--text); line-height: var(--lh-body);
+  max-width: 44em;
+}
+.rpg-clamp.is-open { display: block; overflow: visible; }
+.rpg-clamp.is-empty { color: var(--faint); display: block; }
+.rpg-clamp-toggle { margin-top: var(--sp-1); font-size: var(--fs-caption); }
+
+/* ---- ⑧ 页脚：吸底（祖先无 overflow:hidden，.rpage 未用 .card 包裹） ---- */
+.rpg-foot {
+  position: sticky; bottom: 0; z-index: 2;
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--hairline);
+  background: var(--bg);
+}
+.rpg-foot .spacer { flex: 1; }
+.rpg-pager { display: inline-flex; gap: var(--sp-1); }
+
+/* 加载 / 错误 */
+.rpg-loading { color: var(--faint); font-size: var(--fs-sm); margin: 0; }
+
+@media (max-width: 1100px) {
+  .rpg-tiles { grid-template-columns: repeat(2, 1fr); }
+  .rpg-detail-grid { grid-template-columns: 1fr; }
+  .rpg-hero { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ==== 坏例入数据集 + 人工标注（ADR-0017 D1/D2；批 badcase-frontend）====
+   版面契约 .scratch/badcase-intake/contract-variant-a.html。抽屉壳复用 .drawer-panel
+   （玻璃白名单里既有的那一层），本段零 backdrop-filter；颜色只给状态（warn = 错答草稿、
+   good = 已入集 / 已在集内、bad = 未过评估器）；数字 mono + tabular-nums。 */
+
+/* 矩阵格第三行小标：人工分胶囊 + 「已入集」 */
+.rpg-cell-tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: 2px; }
+.rpg-human {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  height: 18px; padding: 0 var(--sp-2);
+  border-radius: var(--r-pill); background: var(--bg2); border: 1px solid var(--hairline-strong);
+  font-size: var(--fs-nano); color: var(--text); white-space: nowrap;
+}
+.rpg-human .k { color: var(--faint-on-sunken); font-family: var(--cjk); }
+.rpg-human .mono { font-weight: var(--fw-semibold); font-variant-numeric: var(--numeric-data); }
+.rpg-added {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 var(--sp-2);
+  border-radius: var(--r-badge); background: var(--good-bg); border: 1px solid var(--good-line);
+  color: var(--good); font-size: var(--fs-nano); font-weight: var(--fw-medium); white-space: nowrap;
+}
+.rpg-name-sub .rpg-human { margin-left: var(--sp-1); }
+/* 格详情头右侧的两个入口 */
+.rpg-intake { margin-left: auto; display: inline-flex; gap: var(--sp-1); }
+
+/* ---- 抽屉骨架：头 / 滚动体 / 吸底脚 ---- */
+.drawer-panel.rpg-bc { display: flex; flex-direction: column; }
+.rpg-bc-head {
+  flex: none; display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--pad-card-x); border-bottom: 1px solid var(--hairline);
+}
+.rpg-bc-title { min-width: 0; flex: 1; }
+.rpg-bc-title h2 {
+  margin: 0; font-size: var(--fs-card-title); font-weight: var(--fw-semibold); letter-spacing: var(--ls-title);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--lh-snug);
+}
+.rpg-bc-title .id { font-size: var(--fs-micro); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rpg-bc-x { flex: none; }
+.rpg-bc-progress { display: inline-flex; align-items: baseline; gap: var(--sp-1); font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); font-variant-numeric: var(--numeric-data); }
+.rpg-bc-progress small { font-family: var(--cjk); font-size: var(--fs-micro); font-weight: var(--fw-regular); color: var(--faint); }
+.rpg-bc-body { flex: 1; min-height: 0; overflow: auto; }
+.rpg-bc-foot {
+  flex: none; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  padding: var(--sp-4) var(--pad-card-x); border-top: 1px solid var(--hairline); background: var(--panel);
+}
+.rpg-bc-foot .spacer { flex: 1; }
+.rpg-bc-foot-main { display: flex; flex-direction: column; gap: var(--sp-1); }
+
+/* ---- 分段 ---- */
+.rpg-bc-sec { padding: var(--pad-card) var(--pad-card-x); border-bottom: 1px solid var(--hairline); }
+.rpg-bc-sec:last-child { border-bottom: 0; }
+.rpg-bc-sec-h { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.rpg-bc-sec-h h3 { margin: 0; font-size: var(--fs-section); font-weight: var(--fw-semibold); letter-spacing: var(--ls-caps-cjk); }
+.rpg-bc-sec-h .right { margin-left: auto; }
+.rpg-bc-hint { font-size: var(--fs-caption); color: var(--faint); }
+.rpg-bc-chip { height: 22px; padding: 0 var(--sp-2); font-size: var(--fs-micro); color: var(--text); cursor: default; border-color: var(--hairline-strong); }
+.rpg-bc-chip.bad { color: var(--bad); border-color: var(--bad-line); }
+.rpg-bc-chip .cnt { color: var(--faint-on-sunken); margin-left: var(--sp-1); font-variant-numeric: var(--numeric-data); }
+.rpg-bc-chip:hover { background: var(--bg2); color: inherit; }
+.rpg-bc-chip.bad:hover { color: var(--bad); }
+
+/* 为何是坏例 */
+.rpg-bc-why { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-2); }
+.rpg-bc-score-num { font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold); color: var(--bad); font-variant-numeric: var(--numeric-data); }
+.rpg-bc-also { margin-top: var(--sp-3); display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; font-size: var(--fs-caption); color: var(--muted); }
+
+/* 原文 */
+.rpg-bc-msg { display: grid; grid-template-columns: 56px 1fr; gap: var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--hairline-soft); }
+.rpg-bc-sec-h + .rpg-bc-msg { border-top: 0; padding-top: 0; }
+.rpg-bc-msg .who { font-size: var(--fs-micro); color: var(--faint); letter-spacing: var(--ls-caps-cjk); padding-top: var(--sp-05); }
+
+/* 人工标注：三大键 */
+.rpg-bc-scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.rpg-bc-score {
+  height: calc(var(--sp-10) + var(--sp-4));
+  border-radius: var(--r-control); background: var(--bg2); border: 1px solid var(--hairline-strong);
+  color: var(--text); font-size: var(--fs-metric); font-weight: var(--fw-semibold); font-variant-numeric: var(--numeric-data);
+  cursor: pointer; transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.rpg-bc-score:hover { background: var(--bg-active); border-color: var(--hairline-hover); }
+.rpg-bc-score[aria-pressed="true"] { background: var(--accent-bg); border-color: var(--accent-line); color: var(--accent-fg); }
+.rpg-bc-score:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.rpg-bc-annot-state { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-caption); color: var(--muted); font-variant-numeric: var(--numeric-data); }
+.rpg-bc-fields { display: grid; grid-template-columns: 1fr 2fr; gap: var(--sp-2); margin-top: var(--sp-3); }
+
+/* 表单字段 */
+.rpg-bc-stack { display: flex; flex-direction: column; gap: var(--sp-3); }
+.rpg-bc-fld { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+.rpg-bc-fld.grow { min-width: 0; }
+.rpg-bc-fld .k { font-size: var(--fs-micro); color: var(--muted); display: flex; align-items: center; gap: var(--sp-2); }
+.rpg-bc-fld .k code { font-family: var(--mono); color: var(--faint); }
+.rpg-bc-fld .k .req { color: var(--warn); }
+.rpg-bc-ds-meta { display: flex; align-items: center; gap: var(--sp-1); flex-wrap: wrap; margin-top: var(--sp-1); }
+.rpg-bc-note-warn { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-caption); color: var(--warn); }
+.rpg-bc-note-warn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--warn-dot); flex: none; }
+.rpg-bc-expected { min-height: 120px; }
+.rpg-bc-expected.is-warn { border-color: var(--warn-line); box-shadow: inset 2px 0 0 var(--warn-dot); }
+
+/* 成功行 */
+.rpg-bc-ok {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  padding: var(--sp-3) var(--pad-card-x); background: var(--good-bg); border-bottom: 1px solid var(--good-line);
+  font-size: var(--fs-sm); font-variant-numeric: var(--numeric-data);
+}
+.rpg-bc-ok::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good-dot); flex: none; }
+.rpg-bc-ok-links { margin-left: auto; display: inline-flex; gap: var(--sp-3); }
+.rpg-bc-ok a { font-weight: var(--fw-medium); color: var(--accent-fg); text-decoration: none; }
+.rpg-bc-ok a:hover { text-decoration: underline; }
+
+/* ---- 批量态：左清单 + 右当前表单 ---- */
+.rpg-bc-ds-row { display: flex; gap: var(--sp-4); flex-wrap: wrap; }
+.rpg-bc-ds-row .rpg-bc-fld { flex: 1; min-width: 220px; }
+.rpg-bc-split { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 0; }
+.rpg-bc-list { list-style: none; margin: 0; padding: 0; border-right: 1px solid var(--hairline); }
+.rpg-bc-item { display: grid; grid-template-columns: 16px 1fr; gap: var(--sp-2); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--pad-card-x); border-bottom: 1px solid var(--hairline-soft); }
+.rpg-bc-item > input { margin-top: var(--sp-05); }
+.rpg-bc-item.is-current { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.rpg-bc-item-main {
+  display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; text-align: left;
+  background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer;
+}
+.rpg-bc-item-main .q { font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rpg-bc-item-main .meta { display: flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-micro); color: var(--faint); }
+.rpg-bc-item-main .chips { display: flex; gap: var(--sp-1); flex-wrap: wrap; }
+.rpg-bc-item-main .st { font-size: var(--fs-caption); color: var(--muted); }
+.rpg-bc-item-main .st.ok { color: var(--good); }
+.rpg-bc-item-main:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.rpg-bc-cur { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--pad-card) var(--pad-card-x); }
+.rpg-bc-selall { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--muted); }
+
+/* ---- 批 badcase-ux-fix（用户 2026-09-07 现网反馈）---- */
+/* 批量态：勾了却没改期望的行 —— 琥珀提示「期望输出未改 · 点行编辑」；底部同色小字「M 条已勾但期望未改」 */
+.rpg-bc-item-main .st.warn { color: var(--warn); }
+.rpg-bc-unedited { font-size: var(--fs-caption); color: var(--warn); white-space: nowrap; }
+/* ⑦ 问题条目里只在报告页开启的三个可选形态：span id chip（点击复制）/ 查看 trace / 同类折叠 */
+.rpage .opt-span {
+  cursor: pointer; font: inherit; font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano); letter-spacing: 0; margin: 0 2px; vertical-align: text-bottom;
+}
+.rpage .opt-span:hover { color: var(--text); border-color: var(--line-strong); text-decoration: underline; }
+.rpage .opt-span:focus-visible { outline: var(--focus-outline); outline-offset: 2px; box-shadow: none; }
+.rpage .opt-trace { font-family: var(--cjk); text-decoration: none; display: inline-flex; align-items: center; gap: 2px; }
+.rpage .opt-fold { font-size: var(--fs-micro); }

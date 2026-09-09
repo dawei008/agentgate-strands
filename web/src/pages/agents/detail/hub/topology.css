@@ -1,0 +1,150 @@
+/* ① 现状「路径」卡（ADR-0017 D4 · 变体 A 卡内展开），前缀 .topo-* / .path-*。
+   卡壳走既有 .card（实心）；节点是 SVG 圆角矩形（--surface-2，选中 --surface-3 + 亮描边），
+   颜色只给状态：报错节点 --bad-line 描边 + --bad 字。零 backdrop-filter、零手写 rgba。 */
+
+/* ---- 折叠一句 / 不可用一行 ---- */
+.path-line {
+  display: flex; align-items: center; gap: var(--sp-3);
+  width: 100%; min-height: var(--h-control);
+  margin: 0; padding: 0 var(--sp-2);
+  border: 0; border-radius: var(--r-control); background: none;
+  color: var(--text); font: inherit; font-size: var(--fs-body); text-align: left; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.path-line:hover { background: var(--tint-2); }
+.path-line:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.path-line .ico { flex: none; width: 16px; height: 16px; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 1.5; }
+.path-line .chev { margin-left: auto; transition: transform var(--dur-fast) var(--ease); }
+.path-line[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.path-line .open { margin-left: auto; font-size: var(--fs-caption); color: var(--muted); }
+.path-line .open + .chev { margin-left: 0; }
+.topo-sep { color: var(--faint); margin: 0 var(--sp-1); }
+.topo-nid, .topo-num, .topo-chain {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data); letter-spacing: var(--ls-num);
+}
+.topo-nid { font-weight: var(--fw-medium); }
+.topo-chain .arr { color: var(--faint); margin: 0 var(--sp-1); }
+.path-unavail {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: var(--h-control); color: var(--muted); font-size: var(--fs-body);
+}
+.path-unavail .ico { flex: none; width: 16px; height: 16px; color: var(--faint); fill: none; stroke: currentColor; stroke-width: 1.5; }
+.path-unavail .btn-link { margin-left: var(--sp-1); }
+.path-skeleton { display: flex; align-items: center; min-height: var(--h-control); padding: 0 var(--sp-2); }
+/* 「未上报任何 span」这一态独有的状态行：原话之后另起一行，不是恒成立散文 */
+.path-unavail-note { margin: var(--sp-1) 0 0 calc(16px + var(--sp-3)); font-size: var(--fs-sm); color: var(--faint); }
+.path-unavail-wrap { display: flex; flex-direction: column; }
+
+/* ---- 卡头「评估流量」chip：复用 .chip 实心药丸（纪律 2）；静态款不给 hover / 手型 ---- */
+.topo-scope { margin-left: var(--sp-2); white-space: nowrap; }
+.topo-scope .n { font-family: var(--mono); font-variant-numeric: var(--numeric-data); color: var(--text); }
+.topo-scope.static { cursor: default; }
+.topo-scope.static:hover { background: var(--bg2); color: var(--muted); }
+
+/* ---- 卡头「层次 / 横向」切换（实心 --bg2 分段，纪律 2） ---- */
+.topo-seg { display: inline-flex; padding: var(--sp-05); background: var(--bg2); border-radius: var(--r-control); gap: var(--sp-05); }
+.topo-seg button {
+  appearance: none; border: 0; background: none;
+  height: var(--h-control-xs); padding: 0 var(--sp-3);
+  border-radius: calc(var(--r-control) - var(--sp-05));
+  font: inherit; font-size: var(--fs-sm); color: var(--faint-on-sunken); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.topo-seg button:hover { color: var(--text); background: var(--bg-active); }
+.topo-seg button[aria-pressed="true"] { background: var(--bg-active); color: var(--text); font-weight: var(--fw-medium); box-shadow: var(--sh-raised); }
+.topo-seg button:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+
+/* ---- 展开态：图 2/3 + 详情 1/3 ---- */
+.topo-wrap {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--pad-card-x); margin-top: var(--sp-4);
+}
+.topo-graph { min-width: 0; }
+.topo-svg { display: block; width: 100%; height: auto; border-radius: var(--r-control); }
+.topo-detail { min-width: 0; border-left: 1px solid var(--hairline); padding-left: var(--pad-card-x); }
+
+/* SVG：边 */
+.topo-e { fill: none; stroke: var(--line); stroke-linecap: round; }
+.topo-e.hi { stroke: var(--muted); }
+.topo-elab rect { fill: var(--panel); stroke: var(--hairline-strong); }
+.topo-elab text {
+  font-family: var(--mono); font-size: var(--fs-micro); fill: var(--muted);
+  font-variant-numeric: var(--numeric-data); text-anchor: middle; dominant-baseline: central;
+}
+.topo-elab.hi text { fill: var(--text); }
+.topo-arrow { fill: var(--line); }
+.topo-arrow.hi { fill: var(--muted); }
+
+/* 「按会话」高亮：选中会话走过的节点 / 边点亮（描边同 .sel），其余压暗（只改 class，不改布局） */
+.topo-e.dim, .topo-elab.dim { opacity: 0.25; }
+.topo-e.path { stroke: var(--text); }
+.topo-arrow.path { fill: var(--text); }
+.topo-elab.path text { fill: var(--text); }
+.topo-n.dim { opacity: 0.3; }
+.topo-n.path rect { stroke: var(--line-inverse); stroke-width: 1.5; }
+
+/* SVG：节点（中性；报错节点才上 bad 色） */
+.topo-n { cursor: pointer; }
+.topo-n:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.topo-n rect { fill: var(--surface-2); stroke: var(--hairline-strong); transition: fill var(--dur-fast) var(--ease); }
+.topo-n:hover rect { fill: var(--surface-3); }
+.topo-n.sel rect { fill: var(--surface-3); stroke: var(--line-inverse); stroke-width: 1.5; }
+.topo-n.err rect { stroke: var(--bad-line); }
+.topo-n .t1 { font-family: var(--mono); font-size: var(--fs-body); font-weight: var(--fw-medium); fill: var(--text); dominant-baseline: central; }
+.topo-n .t2 { font-family: var(--mono); font-size: var(--fs-micro); fill: var(--faint-on-sunken); font-variant-numeric: var(--numeric-data); dominant-baseline: central; }
+.topo-n .t2 .errs { fill: var(--bad); }
+.topo-n .kind {
+  font-family: var(--mono); font-size: var(--fs-nano); fill: var(--faint-on-sunken);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); dominant-baseline: central; text-anchor: end;
+}
+
+/* 详情栏 */
+.topo-nd-head { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--h-control); margin-bottom: var(--sp-3); }
+.topo-nd-head .topo-nid { font-size: var(--fs-card-title); font-weight: var(--fw-semibold); }
+.topo-nd-head .chip { text-transform: uppercase; letter-spacing: var(--ls-caps); font-size: var(--fs-nano); }
+.topo-nd-head .close { margin-left: auto; }
+.topo-nd-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
+.topo-nd-stats .k { display: block; font-size: var(--fs-micro); letter-spacing: var(--ls-caps-cjk); color: var(--faint); }
+.topo-nd-stats .v {
+  font-family: var(--mono); font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold);
+  font-variant-numeric: var(--numeric-data); letter-spacing: var(--ls-num); line-height: var(--lh-tight);
+}
+.topo-nd-stats .v.bad { color: var(--bad); }
+.topo-nd-sec {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin: var(--sp-5) 0 var(--sp-2);
+  font-size: var(--fs-micro); color: var(--muted); letter-spacing: var(--ls-caps-cjk);
+}
+.topo-nd-sec .n { font-family: var(--mono); color: var(--faint); font-variant-numeric: var(--numeric-data); }
+.topo-nd-sec.first { margin-top: 0; }
+.topo-nd-empty { font-size: var(--fs-sm); color: var(--faint); }
+.topo-nd-table { table-layout: fixed; width: 100%; }
+.topo-nd-table td, .topo-nd-table th { overflow: hidden; text-overflow: ellipsis; }
+.topo-nd-table .dir { color: var(--faint); font-family: var(--mono); }
+.topo-nd-table .num { text-align: right; font-family: var(--mono); font-variant-numeric: var(--numeric-data); }
+.topo-nd-table .num.bad { color: var(--bad); }
+.topo-nd-table tr.pick { cursor: pointer; }
+.topo-nd-table tr.pick:hover td { background: var(--tint-2); }
+.topo-nd-table tr.pick:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+
+/* 详情栏「最近会话」/ 右栏「按会话」列表：一行 = 短 id · 时刻 · 耗时 · 报错标记 */
+.topo-sess { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-05); }
+.topo-sess-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: var(--sp-2);
+  width: 100%; min-height: var(--h-control-xs); padding: 0 var(--sp-2);
+  border: 0; border-radius: var(--r-control); background: none;
+  color: var(--text); font: inherit; font-size: var(--fs-sm); text-align: left; text-decoration: none;
+}
+a.topo-sess-row, button.topo-sess-row { cursor: pointer; transition: background var(--dur-fast) var(--ease); }
+a.topo-sess-row:hover, button.topo-sess-row:hover { background: var(--tint-2); }
+a.topo-sess-row:focus-visible, button.topo-sess-row:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+button.topo-sess-row[aria-pressed="true"] { background: var(--bg-active); }
+.topo-sess-row.nolink { color: var(--muted); cursor: default; }
+.topo-sess-row .sid { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topo-sess-row .at, .topo-sess-row .num {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data); letter-spacing: var(--ls-num); color: var(--muted);
+}
+.topo-sess-row .num { text-align: right; }
+.topo-sess-row .badge.bad { justify-self: end; }
+/* 无报错时占位，四列对齐 */
+.topo-sess-row .ok { width: 0; }

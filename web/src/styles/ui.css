@@ -1,0 +1,637 @@
+/* ============================================================================
+   ui.css —— 设计骨架 v2「实心分层观测台」组件样式层（ADR-0016，2026-09-03）
+   ---------------------------------------------------------------------------
+   v1 形态源自 ui-prototypes/design-v3/variant-c-glass/index.html；v2 保留身份
+   （色值 / 字体零变更）换骨架，施工单见 shared-tools/agentgate-design-system-v2/CHANGES.md。
+   tokens.css 只给「值」，本文件给「形态」。
+
+   四条纪律（改这个文件前必读，与 tokens.css 文件头一致）：
+   1) 玻璃只上 hero（.kpi-strip）与浮层（.drawer-panel / .auth-card），卡片实心：
+      .card 族 = --card-bg（实心 --panel）+ 1px --card-border 发丝线 + --sh-card（无投影），
+      零 backdrop-filter、零 --glass-sheen。层次靠表面阶梯 --surface-0..3 与发丝线
+      阶梯 --hairline-soft / --hairline / --hairline-border / --hairline-strong / --hairline-hover
+      表达；本文件不许再手写 rgba 白线（glass-guard 守卫）。
+   2) 表格零玻璃：thead = --tint-1 纯 tint，行 hover = --tint-2 纯 tint，
+      表格内 backdrop-filter 违规数必须 = 0。chip / badge / kbd 实心 --bg2。
+   3) 数据走 mono + --numeric-data；数字三档 --fs-display 48（hero 唯一）/
+      --fs-metric 24（卡内主数）/ --fs-metric-sm 18（表内强调）。语义色只上
+      文字/圆点/tint 底徽章；分数条填充 --viz-1（绿），低于目标才 --warn-dot（琥珀）。
+   4) 焦点环统一 outline 型：outline: var(--focus-outline); outline-offset: 2px。
+      box-shadow 焦点环会被 hero 玻璃的 glow 吃掉（原型实测坑），全站禁用。
+
+   命名约定：通用组件用无前缀短名（.btn/.badge/.card/.kpi），
+   表格骨架统一 .u-table（页面级表格加自己的类做列宽即可）。
+   ========================================================================= */
+
+/* ==========================================================================
+   1. 数据字体原子（纪律 3 的载体，全站数字/ID/时间/金额都挂这两个）
+   ========================================================================= */
+.mono { font-family: var(--mono); }
+.data,
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  letter-spacing: 0;
+}
+/* 数字列一律右对齐（th 也要，否则表头与数据错位） */
+.num,
+th.num,
+td.num { text-align: right; }
+.data-lg {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-metric-sm);
+  font-weight: 600;
+  letter-spacing: var(--ls-num);
+}
+.subtle { color: var(--faint); }
+.muted  { color: var(--muted); }
+/* 凹陷底上的弱文字专用（纪律 2） */
+.subtle-on-sunken { color: var(--faint-on-sunken); }
+
+/* ==========================================================================
+   2. 按钮
+   ---------------------------------------------------------------------------
+   兼容契约：既有 TSX 用 .btn(=主按钮) / .btn.ghost(=次按钮) / .btn.mini(=小号)，
+   全部保留语义不变，只换 B 案形态。新代码可用语义化别名：
+   .btn-primary(=.btn) / .btn-link(文字链) / .btn-icon(方形)。
+   小号没有别名——直接写 .btn.mini。
+   ========================================================================= */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--sp-1);
+  height: var(--h-control);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-control);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--cjk);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.btn:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn:active { background: var(--accent-active); border-color: var(--accent-active); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn .ic { width: 14px; height: 14px; vertical-align: middle; }
+
+/* 次按钮（中性面 chrome，实心不玻璃）：.ghost 旧名 + .btn-secondary 新名。
+   原型 .btn：实心 --bg2 底 + rgba 白描边，hover 提亮到 #31394D。 */
+.btn.ghost,
+.btn-secondary {
+  background: var(--bg2);
+  color: var(--text);
+  border-color: var(--hairline-strong);
+  font-weight: 500;
+}
+.btn.ghost:hover,
+.btn-secondary:hover {
+  background: var(--bg-active);
+  border-color: var(--hairline-hover);
+  color: var(--text);
+}
+.btn.ghost:disabled:hover,
+.btn-secondary:disabled:hover { background: var(--bg2); border-color: var(--hairline-strong); }
+
+/* 小号：.btn.mini —— 窄位按钮（Sidebar 折叠/登出、认证过期条）。表内行动
+   **不用**带框按钮，走 .row-actions 里的文字链（见第 7 节）。 */
+.btn.mini {
+  height: var(--h-control-xs);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-caption);
+}
+/* 方形图标按钮 */
+.btn-icon {
+  width: var(--h-control-xs);
+  height: var(--h-control-xs);
+  padding: 0;
+}
+
+/* 文字链按钮：表格操作列 / 卡片头次要动作的默认形态。
+   B 案纪律：表内操作不用带框按钮堆叠（会把密排表格切成色块），用文字链。 */
+.btn-link {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  height: auto; padding: 0;
+  border: 0; background: none;
+  color: var(--accent-fg);
+  font-family: var(--cjk);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn-link:hover { text-decoration: underline; color: var(--accent-active); }
+.btn-link:disabled { opacity: .45; cursor: not-allowed; text-decoration: none; }
+.btn-link.danger { color: var(--bad); }
+
+/* 焦点环统一 outline 型（纪律 4）：box-shadow 环会被玻璃 glow 吃掉 */
+.btn:focus-visible,
+.btn-link:focus-visible,
+.btn-icon:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  box-shadow: none;
+  border-radius: var(--r-control);
+}
+
+/* ==========================================================================
+   3. 徽章（实心/tint 不透明底 + 药丸形，原型 .st 形态；零玻璃——纪律 2）
+   中性徽章 = 实心 --bg2；语义徽章 = 同色低 alpha tint 底 + 亮色文字。
+   ========================================================================= */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  height: 18px;
+  padding: 0 7px;
+  border: 1px solid var(--neutral-line);
+  border-radius: var(--r-pill);
+  background: var(--neutral-bg);   /* 实心 #272F42，不透明 */
+  color: var(--neutral);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+.badge .dot,
+.badge > .badge-dot {
+  width: 5px; height: 5px; flex: none;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .9;
+}
+.badge.ok   { border-color: var(--good-line); background: var(--good-bg); color: var(--good); }
+.badge.warn { border-color: var(--warn-line); background: var(--warn-bg); color: #FBBF24; }
+.badge.bad  { border-color: var(--bad-line);  background: var(--bad-bg);  color: var(--bad); }
+/* 运行中 = 蓝（原型 .st.run），与 accent 绿的「达标/通过」语义区分 */
+.badge.run  { border-color: var(--info-line); background: var(--info-bg); color: var(--info); }
+/* 徽章内的数字（比例/计数）走 mono，避免 "241/250" 参差 */
+.badge-mono {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  letter-spacing: 0;
+}
+
+/* ==========================================================================
+   4. 类型标记：2px 左色条 + 纯文字
+   ---------------------------------------------------------------------------
+   为什么不用徽章：一张表里类型列每行都有值，全做徽章会沦为色块拼贴。
+   色条能把「类型」降到可扫但不抢的层级。
+   ========================================================================= */
+.kind {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.kind::before {
+  content: ""; flex: none;
+  width: 2px; height: 11px;
+  border-radius: 1px;
+  background: var(--neutral-dot);
+}
+.kind.online::before  { background: var(--viz-1); }    /* 线上评估 */
+.kind.regress::before { background: var(--viz-2); }    /* 回归测试 */
+.kind.sim::before     { background: var(--kind-sim); } /* 模拟测试 */
+.kind.red::before     { background: var(--bad-dot); }  /* 红队测试 */
+
+/* 环节链：mono + hairline 竖线分隔，一格塞完整链路 */
+.stages {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+.stages > span { padding: 0 5px; border-left: 1px solid var(--line); }
+.stages > span:first-child { padding-left: 0; border-left: 0; }
+.stages > span.off { color: var(--faint); opacity: .8; }
+
+/* ==========================================================================
+   5. 分数微条（meter）
+   ---------------------------------------------------------------------------
+   纪律 3：填充一律 --viz-1，只有低于目标才 --warn-dot；达标与否靠轨道上的
+   1px 目标刻度线读出，不靠颜色（十几行绿条会盖掉真正的告警色）。
+   目标位置用 --meter-target 覆盖，默认 80%。
+   ========================================================================= */
+.meter { display: inline-flex; align-items: center; gap: 7px; }
+.meter-track {
+  position: relative; display: inline-block; flex: none;
+  width: 52px; height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .09);   /* 原型 sev/ring 轨道色 */
+  vertical-align: middle;
+}
+.meter-track.with-target::after {
+  content: ""; position: absolute;
+  left: var(--meter-target, 80%); top: -3px; bottom: -3px;
+  width: 1px;
+  background: var(--line-strong);
+}
+.meter-fill {
+  display: block; height: 100%;
+  border-radius: 2px;
+  background: var(--viz-1);
+}
+.meter-fill.warn { background: var(--warn-dot); }
+.meter-fill.bad  { background: var(--bad-dot); }
+
+/* 环比 / 差值 */
+.delta {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption);
+}
+.delta.pos { color: var(--good); }
+.delta.neg { color: var(--bad); }
+
+/* ==========================================================================
+   6. 卡片 = 实心（纪律 1 · v2）：--card-bg（--panel）+ 1px --card-border 发丝线，
+   无投影（--sh-card none）、零 blur、零 sheen。边界由实心面对画布的色阶给出，
+   置顶/选中卡用 --sh-ring 双环，hover 提起用 --sh-raised（1px 顶部内高光）。
+   ========================================================================= */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+  margin-bottom: var(--gap-card);
+}
+.card-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: var(--h-card-head);
+  padding: 0 var(--sp-3) 0 var(--pad-card-x);
+  border-bottom: 1px solid var(--hairline);
+}
+.card-title {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  letter-spacing: -.005em;
+}
+.card-sub { font-size: var(--fs-micro); color: var(--muted); }
+/* 标题旁的计数芯片（mono，实心 --bg2 小字底） */
+.card-count {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  background: var(--bg2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-badge);
+  padding: 1px 5px;
+}
+.card-head .spacer,
+.card-foot .spacer { flex: 1; }
+/* 卡片体（非表格内容用，表格直接贴 .card 内壁） */
+.card-body { padding: var(--pad-card) var(--pad-card-x); }
+.card-foot {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--pad-card-x);
+  border-top: 1px solid var(--hairline);
+  background: none;                /* 卡内不再叠面，hairline 分层即可 */
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+
+/* 筛选 chip 组（卡片头右侧）：实心 --bg2 药丸（纪律 2，零透明） */
+.filters { display: flex; align-items: center; gap: var(--sp-1); }
+.chip {
+  height: var(--h-control-xs);
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 0 10px;
+  border: 1px solid var(--hairline-border);
+  border-radius: var(--r-pill);
+  background: var(--bg2);          /* 实心，不透明 */
+  color: var(--muted);
+  font-family: var(--cjk);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.chip:hover { background: var(--bg-active); color: var(--text); }
+.chip[aria-pressed="true"] {
+  background: var(--accent-bg);
+  border-color: var(--accent-line);
+  color: var(--accent-fg);
+  font-weight: 500;
+}
+.chip .n {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano);
+  color: var(--faint-on-sunken);
+}
+.chip[aria-pressed="true"] .n { color: var(--accent-fg); }
+/* a11y：筛选 chip 焦点圈——outline 型（纪律 4） */
+.chip:focus-visible { outline: var(--focus-outline); outline-offset: 2px; box-shadow: none; }
+
+/* ==========================================================================
+   7. 表格骨架 .u-table —— 零玻璃（纪律 2）
+   ---------------------------------------------------------------------------
+   C 案表格三个识别点：
+   a) 表格底透明（坐在实心卡上），thead 底 = --tint-1 纯 tint（非玻璃、无 blur）；
+   b) 拉丁表头（RUN ID / $ / P95）用 th.lat：大写 + mono + --ls-caps；
+   c) 行高 var(--h-row) 34px + 格内分隔线 hairline；行 hover = --tint-2 纯 tint。
+   本表内任何元素禁止 backdrop-filter（护栏测试断言违规数 = 0）。
+   ========================================================================= */
+.u-table {
+  width: 100%;
+  border-collapse: separate;   /* separate + border-spacing:0：圆角裁切不吃掉边框 */
+  border-spacing: 0;
+  font-size: var(--fs-sm);
+  background: transparent;     /* 卡内：透出实心卡面，表格自己不叠面 */
+}
+/* 列宽固定：需要单元格 ellipsis 截断时必须加（auto 布局会忽略 max-width，
+   长文本照样把表撑开）。配 <colgroup> 显式给列宽。 */
+.u-table.fixed { table-layout: fixed; }
+/* 独立表格（不在 .card 里）自带外框：实心 --panel 面（表格零玻璃） */
+.u-table.standalone {
+  background: var(--panel);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.u-table thead th {
+  height: var(--h-row-head);
+  padding: 0 var(--pad-cell-x);
+  background: var(--tint-1);                     /* (a) 纯 tint，非玻璃 */
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-caps-cjk);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* (b) 拉丁表头 */
+.u-table thead th.lat,
+.u-table thead th .lat {
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+}
+.u-table thead th.r, .u-table td.r { text-align: right; }
+.u-table thead th.c, .u-table td.c { text-align: center; }
+
+.u-table tbody td {
+  height: var(--h-row);                          /* (c) 34px */
+  padding: 0 var(--pad-cell-x);
+  border-bottom: 1px solid var(--hairline-soft);   /* (c) 行分隔 hairline */
+  vertical-align: middle;
+}
+.u-table tbody tr { transition: background var(--dur) var(--ease); }
+.u-table tbody tr:last-child td { border-bottom: 0; }
+.u-table tbody tr:hover td { background: var(--tint-2); }   /* 纯 tint，无 blur */
+.u-table tbody tr[aria-selected="true"] td { background: var(--accent-bg); }
+/* 双行单元格的表格整体升到 40px */
+.u-table.roomy tbody td { height: var(--h-row-tall); }
+/* 可点击行 */
+.u-table tbody tr.row-link { cursor: pointer; }
+
+/* 单元格内容原子 */
+.cell-2l { line-height: 1.35; }
+.cell-main {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text);
+}
+.cell-main a { color: inherit; text-decoration: none; }
+.cell-main a:hover { color: var(--accent-fg); text-decoration: underline; }
+.cell-sub {
+  font-family: var(--mono);
+  font-size: var(--fs-nano);
+  color: var(--faint);
+  letter-spacing: 0;
+}
+/* 表格操作列：文字链靠右排（纪律：表内不堆带框按钮） */
+.row-actions {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: var(--sp-3);
+}
+/* ==========================================================================
+   8. KPI 条（hero 主卡 + 次级等宽格，靠 1px 内分隔线连成一条）
+   整条 = 全站唯一的玻璃卡（v2 纪律 1：blur 只在 hero 与浮层；格子内零 blur）。
+   玻璃五件套原样保留，圆角升到 --r-hero，格内距 --pad-hero。
+   ========================================================================= */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: 328px repeat(var(--kpi-cols, 4), minmax(0, 1fr));
+  background: var(--glass-sheen), var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-hero);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+  margin-bottom: var(--gap-card);
+  position: relative;
+}
+/* 绿光沿条顶缘：强化「主指标」（原型 .kpi-hero::after 的观测台记号） */
+.kpi-strip::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  border-radius: inherit; pointer-events: none;
+  background: var(--glow-line);
+}
+.kpi {
+  min-width: 0;
+  padding: var(--pad-hero);
+  border-left: 1px solid var(--hairline);
+}
+.kpi:first-child { border-left: 0; }
+.kpi-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: var(--ls-caps-cjk);
+}
+.kpi-label .dot { width: 5px; height: 5px; flex: none; border-radius: 50%; background: var(--neutral-dot); }
+.kpi-label .dot.viz1 { background: var(--viz-1); }
+.kpi-label .dot.viz2 { background: var(--viz-2); }
+.kpi-label .dot.good { background: var(--good-dot); }
+.kpi-label .dot.warn { background: var(--warn-dot); }
+.kpi-label .dot.bad  { background: var(--bad-dot); }
+.kpi-label .kpi-scope { font-weight: 400; letter-spacing: 0; color: var(--faint); }
+.kpi-val {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-metric);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-num);
+}
+.kpi-val .unit {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--faint);
+  margin-left: 2px;
+}
+.kpi-foot {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 4px;
+  font-size: var(--fs-micro);
+  color: var(--faint);
+}
+
+/* hero 格：--fs-display 48px mono 数字 = 全页唯一视觉锚点（glass-guard 钉唯一） */
+.kpi-hero .kpi-label { color: var(--text); }
+.kpi-hero-row { display: flex; align-items: flex-end; gap: var(--sp-3); margin-top: var(--sp-2); }
+.kpi-hero-num {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-display);
+  font-weight: 600;
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+}
+.kpi-hero-num .denom {
+  font-size: var(--fs-metric-sm);
+  font-weight: 500;
+  color: var(--faint);
+  letter-spacing: 0;
+}
+.kpi-hero-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding-bottom: 3px;
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--good);
+}
+.kpi-hero-delta.neg { color: var(--bad); }
+.kpi-hero-meta {
+  display: flex; gap: var(--sp-4);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--hairline);
+  font-size: var(--fs-micro);
+  color: var(--faint);
+}
+.kpi-hero-meta b { color: var(--muted); font-weight: 500; }
+.kpi-hero-meta .ok { margin-left: auto; color: var(--good); font-weight: 500; }
+
+/* ==========================================================================
+   9. 元信息条（页头下方一行 mono 事实，取代「配置卡片」）
+   ========================================================================= */
+.metabar {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--sp-5);
+  padding: var(--sp-2) 0 var(--sp-3);
+  margin-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-caption);
+}
+.metabar .item { display: flex; align-items: baseline; gap: 6px; }
+.metabar .k {
+  font-size: var(--fs-micro);
+  color: var(--faint);
+  letter-spacing: var(--ls-caps-cjk);
+}
+.metabar .v {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--text);
+}
+.metabar .v.cjk { font-family: var(--cjk); }
+.metabar .divider { width: 1px; height: 14px; background: var(--line-subtle); }
+
+/* ==========================================================================
+   10. 空态 / 骨架 / hairline 统计列表（页面共用）
+   ========================================================================= */
+.u-empty {
+  padding: var(--sp-8) var(--sp-4);
+  text-align: center;
+  background: var(--card-bg);
+  /* 空态虚线 .16：glass-guard 登记例外（v1 值，未入发丝线阶梯） */
+  border: 1px dashed rgba(255, 255, 255, .16);
+  border-radius: var(--r-card);
+}
+.u-empty p { margin: 0 0 var(--sp-2); font-size: var(--fs-body); }
+.u-empty .sub { color: var(--faint); font-size: var(--fs-caption); margin-bottom: var(--sp-4); }
+
+.stat-list { display: flex; flex-direction: column; }
+.stat-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-subtle);
+  font-size: var(--fs-caption);
+}
+.stat-row:last-child { border-bottom: 0; }
+.stat-row .k { color: var(--muted); }
+.stat-row .v {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-weight: 600;
+  color: var(--text);
+}
+.stat-row .v.pos { color: var(--good); }
+.stat-row .v.neg { color: var(--bad); }
+
+/* ==========================================================================
+   11. 表单控件（密排版：28px 高、--r-control 圆角、mono 值域）
+   ========================================================================= */
+.u-input,
+.u-select,
+.u-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 var(--sp-2);
+  height: var(--h-control);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-control);
+  background: var(--bg2);          /* 输入面实心不透明（chrome，纪律 3） */
+  color: var(--text);
+  font-family: var(--cjk);
+  font-size: var(--fs-sm);
+}
+.u-input::placeholder, .u-textarea::placeholder { color: var(--faint-on-sunken); }
+.u-textarea {
+  height: auto;
+  min-height: 96px;
+  padding: var(--sp-2);
+  font-family: var(--mono);
+  line-height: var(--lh-body);
+  resize: vertical;
+}
+.u-input.mono, .u-textarea.mono { font-family: var(--mono); }
+.u-input:hover, .u-select:hover, .u-textarea:hover { border-color: var(--line-strong); }
+.u-input:focus-visible,
+.u-select:focus-visible,
+.u-textarea:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.u-label {
+  display: block;
+  margin-bottom: var(--sp-1);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.u-hint {
+  margin-top: var(--sp-05);
+  font-size: var(--fs-nano);
+  color: var(--faint);
+}
+
+/* 视觉隐藏但可访问 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

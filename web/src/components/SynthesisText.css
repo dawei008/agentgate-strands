@@ -1,0 +1,50 @@
+/* 综合报告正文（SynthesisText 组件）。前缀 .syn-：.rp-* 是独立报告页的面
+   （src/pages/report/report.css 有言在先），撞上去改的是别人的面。
+   零玻璃（纪律 1：blur 只在卡壳层）；chip 走 .badge 语义类（实心底，纪律 3），
+   这里只补行内排版差量。 */
+
+.syn-body { min-width: 0; }
+
+.syn-p {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-sm); line-height: 1.75; color: var(--muted);
+  font-family: var(--cjk); white-space: pre-wrap;
+}
+.syn-p:last-child { margin-bottom: 0; }
+.syn-body b { color: var(--text); font-weight: 600; }
+
+/* 引文块（`> `）：judge 原话，左线 + 下沉底与 diagnosis 同语汇但中性色 */
+.syn-quote {
+  margin: 0 0 var(--sp-2);
+  padding: 4px var(--sp-2);
+  border-left: 2px solid var(--line-strong);
+  background: var(--tint-1);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  font-size: var(--fs-caption); line-height: 1.7; color: var(--muted);
+  font-family: var(--cjk); white-space: pre-wrap;
+}
+.syn-quote:last-child { margin-bottom: 0; }
+
+/* 列表（`- ` / `1. `）：标记由 ::marker 画，正文与 .syn-p 同字号/行高 */
+.syn-list {
+  margin: 0 0 var(--sp-2); padding-left: 1.35em;
+  font-size: var(--fs-sm); line-height: 1.75; color: var(--muted);
+  font-family: var(--cjk);
+}
+.syn-list:last-child { margin-bottom: 0; }
+.syn-list li { margin: 0 0 var(--sp-1); white-space: pre-wrap; }
+.syn-list li:last-child { margin-bottom: 0; }
+.syn-list li::marker {
+  color: var(--accent-fg); font-family: var(--mono); font-size: var(--fs-nano);
+}
+.syn-list .is-sub { margin: var(--sp-1) 0 0; font-size: var(--fs-caption); }
+.syn-list .is-sub li::marker { color: var(--faint-on-sunken); }
+
+/* 引用 chip：.badge（实心 --neutral-bg）之上的行内差量 ——
+   mono + 行内高度收一档，免得 18px 徽章把 1.75 行高的正文顶开 */
+.syn-ref {
+  height: 16px; padding: 0 5px; margin: 0 1px;
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano); letter-spacing: 0;
+  vertical-align: 1px; white-space: nowrap;
+}

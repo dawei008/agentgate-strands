@@ -1,0 +1,8 @@
+# Test-only dependencies (NOT installed into the Lambda bundle — app/requirements.txt
+# is the runtime manifest). Install: python3 -m pip install -r tests/requirements.txt
+#
+# moto: fakes DynamoDB/S3 in-process AND enforces the real 400KB item limit, which
+# is what lets test_run_persist_size.py reproduce the 2026-08-24 data-loss bug
+# instead of mocking it away.
+pytest>=8.0.0
+moto[dynamodb,s3]>=5.0.0

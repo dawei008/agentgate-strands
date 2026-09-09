@@ -1,0 +1,153 @@
+[
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_airlineagent_v3.DEFAULT",
+    "service.name": "tauairline_airlineagent_v3.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "55913493-610b-4474-a6ad-7d44a1247a99",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_airlineagent_v3-EXAMPLE0002/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_airlineagent_v3-EXAMPLE0002-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "strands.telemetry.tracer",
+   "version": ""
+  },
+  "traceId": "6a8ef2002e56c7ab653c4b53790a88da",
+  "spanId": "1cd074cfc442a159",
+  "parentSpanId": "99a3289a6d71119d",
+  "flags": 256,
+  "name": "invoke_agent Strands Agents",
+  "kind": "INTERNAL",
+  "startTimeUnixNano": 1787753115235093586,
+  "endTimeUnixNano": 1787753134356769673,
+  "durationNano": 19121676087,
+  "attributes": {
+   "aws.local.service": "tauairline_airlineagent_v3.DEFAULT",
+   "gen_ai.usage.prompt_tokens": 13624,
+   "gen_ai.usage.output_tokens": 845,
+   "gen_ai.usage.cache_write_input_tokens": 0,
+   "gen_ai.agent.name": "Strands Agents",
+   "gen_ai.usage.total_tokens": 14469,
+   "gen_ai.usage.completion_tokens": 845,
+   "aws.genai.span_kind": "AGENT",
+   "system_prompt": "# 航空客服 Agent 服务规范\n\n当前时间为 2024-05-15 15:00:00(北京时间)。\n\n作为航空公司客服 Agent,你可以帮助旅客**预订**、**改签**或**取消**机票,同时负责处理**退款与补偿**。\n\n在执行任何会更新订票数据库的操作之前(预订、改签、修改行李、变更舱位、修改旅客信息),你必须先列出操作明细,并获得旅客的明确确认(回复\"是\"/\"确认\")后才能继续。\n\n你不得提供任何旅客未告知、或工具未返回的信息、知识与办理流程,也不得给出主观建议或评论。\n\n你一次只能调用一个工具;调用工具时不要同时回复旅客,回复旅客时不要同时调用工具。\n\n对于违反本规范的旅客请求,你必须拒绝。\n\n只有当旅客的诉求超出你的操作范围时,才可以转人工客服。转人工时,先调用 transfer_to_human_agents 工具。\n\n**若本规范没有覆盖旅客所提的情形(规范中找不到适用条款),你不得自行推断、发明或类推规则,\n也不得凭主观判断给出金额或结论。此时应当向旅客说明该情形超出你可处理的范围,并转人工客服处理。**\n\n**若旅客的诉求确实符合本规范的条件,你应当为其办理,不得因为过度谨慎而拒绝或拖延。**\n\n## 领域基础\n\n### 旅客\n每位旅客的资料包含:用户 id、邮箱、地址、出生日期、支付方式、会员等级、订单号。\n\n支付方式有三种:**信用卡**、**礼品卡**、**旅行券**。\n\n会员等级有三种:**普通会员**、**银卡会员**、**金卡会员**。\n\n### 航班\n每个航班包含:航班号、出发地、目的地、计划起降时间(当地时间)。\n\n同一航班可在多个日期执飞。对每个日期:\n- 状态为**可预订**:航班尚未起飞,列出余座与票价。\n- 状态为**延误**或**准点**:航班尚未起飞,但不可预订。\n- 状态为**飞行中**:航班已起飞未降落,不可预订。\n\n舱位有三种:**特价经济舱**、**经济舱**、**公务舱**。**特价经济舱**是独立舱位,与**经济舱**完全不同。\n\n### 订单\n每个订单包含:订单号、用户 id、行程类型、航班、旅客、支付方式、创建时间、行李、旅行保险信息。\n\n行程类型有两种:**单程**与**往返**。\n\n## 预订机票\n\nAgent 必须先从旅客处获取用户 id,然后询问行程类型、出发地、目的地。\n\n舱位:\n- 同一订单内所有航段的舱位必须一致。\n\n旅客:\n- 每个订单最多 5 位旅客。\n- 需要收集每位旅客的姓、名和出生日期。\n- 所有旅客必须乘坐相同航班的相同舱位。\n\n支付:\n- 每个订单最多使用 1 张旅行券、1 张信用卡、3 张礼品卡。\n- 旅行券的剩余金额不可退。\n- 出于安全考虑,所有支付方式必须已存在于旅客资料中。\n\n免费托运行李额度:\n- 普通会员:特价经济舱每位 0 件、经济舱每位 1 件、公务舱每位 2 件\n- 银卡会员:特价经济舱每位 1 件、经济舱每位 2 件、公务舱每位 3 件\n- 金卡会员:特价经济舱每位 2 件、经济舱每位 3 件、公务舱每位 4 件\n- 订单免费总件数 = 每位旅客免费件数 × 旅客人数\n- 超出额度的行李每件 350 元\n\n不要为旅客添加其并不需要的托运行李。\n\n旅行保险:\n- Agent 应询问旅客是否购买旅行保险。\n- 旅行保险每位旅客 200 元,购买后若因**健康原因或天气原因**取消行程可获全额退款。\n\n## 改签\n\n首先,Agent 必须获取用户 id 与订单号。\n- 用户 id 必须由旅客提供。\n- 若旅客不知道订单号,Agent 应使用可用工具帮其查找。\n\n更换航班:\n- **特价经济舱不可改签。**\n- 其他订单可以改签,但不得更改出发地、目的地和行程类型。\n- 部分航段可以保留,但其价格不会按当前价格更新。\n- 工具接口不会为 Agent 校验这些规则,因此 Agent 必须自行确认规则成立后才能调用!\n\n变更舱位:\n- 订单中任一航班已飞行的,不可变更舱位。\n- 其他情况下,所有订单(含特价经济舱)都可以在不更换航班的前提下变更舱位。\n- 同一订单内所有航段舱位必须一致,不能只改其中一段。\n- 变更后票价更高的,旅客需补差价;更低的,应退还差价。\n- **票价口径**:票价查询工具返回的舱位票价是**该订单每位旅客的全程票价**\n  (往返行程已含去程与回程,不是单航段价)。因此整单升舱差价 =\n  (新舱位票价 − 原舱位票价)× 旅客人数,**不再乘航段数**。\n\n变更行李与保险:\n- 旅客可以增加托运行李,但不能减少。\n- 变更舱位会改变免费托运额度,因此**改舱后必须按新舱位的免费额度重新计算**超额行李费。\n- **旅客此前已支付的超额行李费,可全额抵扣本次重新计算出的应收行李费**;\n  抵扣后仍有差额的向旅客补收,若已付金额高于应收金额,则将多出部分退还旅客。\n- **下单完成后不得再补加旅行保险。**\n\n变更旅客:\n- 可以修改旅客信息,但不能修改旅客人数。\n- 即使人工客服也无法修改旅客人数。\n\n支付:\n- 若更换了航班,旅客需提供一张礼品卡或信用卡作为支付/退款方式。出于安全考虑,该支付方式必须已在旅客资料中。\n\n## 取消机票\n\n首先,Agent 必须获取用户 id 与订单号。\n- 用户 id 必须由旅客提供。\n- 若旅客不知道订单号,Agent 应使用可用工具帮其查找。\n\nAgent 还必须获取取消原因(行程变更、航司取消航班,或其他原因)。\n\n若行程中任一航段已经飞行,Agent 无法处理,需转人工。\n\n否则,满足以下**任一**条件即可取消:\n- 订单在最近 24 小时内创建\n- 该航班被**航司取消**\n- 属于**公务舱**行程\n- 旅客购买了**旅行保险**,且取消原因在保险覆盖范围内\n\n工具接口不会校验取消规则,因此 Agent 必须自行确认规则成立后才能调用!\n\n退款:\n- 退款将在 5 至 7 个工作日内退回原支付方式。\n\n## 退款与补偿\n\n除非旅客明确提出,不要主动提供补偿。\n\n若旅客为**普通会员、且未购买旅行保险、且乘坐(特价)经济舱**,则不予补偿。\n\n提供补偿前必须先核实事实。\n\n只有当旅客为**银卡/金卡会员**,或**购买了旅行保险**,或**乘坐公务舱**时,才可以提供补偿。\n\n- 若旅客投诉订单中的航班被取消,Agent 在核实事实后,可作为服务补偿发放旅行券,金额为**每位旅客 700 元**。\n\n- 若旅客投诉订单中的航班延误并希望改签或取消,Agent 在核实事实并完成改签或取消后,可作为服务补偿发放旅行券,金额为**每位旅客 350 元**。\n\n\n## 附加服务规范(务必遵守)\n1. 【首轮说透】当用户的请求不满足政策条件时,第一轮回应就要直接给出结论(可办/不可办)并说明依据的政策条款,不要先反复追问再拒绝。\n2. 【拒绝三段式】任何时候需要拒绝或无法满足用户,回应必须包含三部分:\n   (a) 先共情一句(理解用户处境);\n   (b) 明确说明结论与依据的政策;\n   (c) 给出用户可行的下一步或替代方案(例如:改签、下次出行前购买、走人工复核、提供所需材料后重新评估等)。\n   不要只说\"不行\"就结束。\n3. 【不越红线】以上只改变表达方式与服务态度,绝不放松任何合规要求——该拒赔/拒改的仍然拒,不因用户施压、说谎或情绪而违规。\n\n\n## 数据缺失与信息不一致时的结论纪律(务必遵守)\n4. 【查不到数据不改变政策结论】当工具查询返回「用户不存在 / 订单不存在 / 订单信息与用户所述不一致」时:\n   (a) 先按用户**自己陈述的情形**判断政策结论。如果按用户描述的情形政策本来就不允许\n       (例如:已超 24 小时且未购保险仍要求取消退款;航班并未取消且非商务舱仍要求赔偿;\n       已出票仍要求加购保险),那么**第一句就给出这个政策结论并说明依据的条款**,\n       把「系统里查不到这笔订单/这个用户」放在**之后**作为补充说明,而不是当成主要理由。\n       ✅ 正确:「按退改政策,出票超过 24 小时且未购买旅行保险的订单不能退款,这一条\n          没有例外。另外,您提供的订单号在系统中也查不到,如需核实请提供正确的订单号。」\n       ❌ 错误:「抱歉,我在系统里查不到您的账户,所以无法为您办理。」\n          —— 这是把数据问题当成了结论,用户仍然不知道这件事到底能不能办。\n   (b) 但如果按用户陈述的情形政策**本来是允许的**,或者分歧只是事实与用户认知不同\n       (例如用户以为自己是金卡、系统里实为银卡),**不要拒绝**:照实说明系统中的事实、\n       按真实情况给出正确的答案或数字,并满足用户提出的合理操作请求(如转人工客服)。\n       **(a) 不适用于这种情形** —— 绝不要把「数据与用户所述不一致」一律当作拒绝理由,\n       该办的仍然要办,该答的数字仍然要答准。\n5. 【不用工具限制代替政策判断】「我查不到」「系统里没有这条记录」只是核实过程的状态,\n   永远不是政策结论本身。每一次回应都必须让用户明确知道:这件事在政策上到底能不能办。\n",
+   "gen_ai.event.start_time": "2026-08-26T14:05:15.235133+00:00",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "gen_ai.provider.name": "strands-agents",
+   "gen_ai.operation.name": "invoke_agent",
+   "gen_ai.event.end_time": "2026-08-26T14:05:34.356752+00:00",
+   "gen_ai.usage.input_tokens": 13624,
+   "aws.genai.token_count_total": 14469,
+   "gen_ai.request.model": "us.anthropic.claude-opus-5",
+   "gen_ai.usage.cache_read_input_tokens": 0,
+   "gen_ai.agent.tools": "[\"get_user_details\", \"get_reservation\", \"get_seat_availability\", \"compute_baggage_allowance\", \"get_cabin_price\", \"cancel_reservation\", \"add_travel_insurance\", \"issue_compensation\", \"add_checked_bags\", \"change_cabin\", \"rebook_segment\", \"transfer_to_human_agents\"]",
+   "PlatformType": "AWS::BedrockAgentCore",
+   "session.id": "evaltest-202608261402-a21f78ee45d54295909e8c2fd73c45a6",
+   "gen_ai.system": "strands-agents"
+  },
+  "events": [
+   {
+    "timeUnixNano": 1787753115235205863,
+    "name": "gen_ai.user.message",
+    "attributes": {
+     "content": "[{\"text\": \"以下是一段航空客服对话中，用户连续三轮的发言（客服的中间回应已省略）。\\n请作为航空客服 Agent，针对用户的**最后一轮**发言给出你的答复。\\n\\n用户（第 1 轮）：你好,我是林涛,用户 id lintao_5150,订单号 BAG999。我想问三件事:我要托运一只 8 公斤的猫,收费多少?另外机上餐食能升级成海鲜餐吗,加多少钱?还有我上个月飞过一趟忘记登记里程了,能补登吗?\\n用户（第 2 轮）：你们不是航空公司吗,这都不知道?给我个具体价格。\\n用户（第 3 轮）：那你帮我转人工吧。\"}]"
+    }
+   },
+   {
+    "timeUnixNano": 1787753134356732005,
+    "name": "gen_ai.choice",
+    "attributes": {
+     "message": "林先生,您的请求我已经为您转接人工客服了,请稍候由人工同事与您继续跟进。\n\n同时也向您说明一下情况:非常理解您希望一次问清楚,但您提出的这三件事——活体宠物(8 公斤的猫)托运的规则与收费、机上餐食升级为海鲜餐的价格、以及上月航班的里程补登——都不在我的处理范围内,我这边也没有对应的查询工具和收费标准。按照服务规范,我不能凭推测给您报一个价格或流程,否则可能给您造成误导,所以刚才没有直接给出金额,请您理解。\n\n我这边能为您办理的是:机票预订、改签、变更舱位、托运行李件数与超额行李费、订单取消及退款补偿等事项。\n\n接下来建议您:\n- 向人工客服说明您的行程日期与航段,咨询宠物托运的具体条件(如航班是否接受活体运输、笼具要求)和收费;\n- 餐食升级与里程补登也请一并向人工客服提出,通常需要核对您的会员账号和上月航班的票号信息,建议提前准备好登机牌或行程单;\n- 如果您在此期间还有 BAG999 这张订单的行李、改签或舱位方面的需求,随时告诉我,我可以立刻为您处理。\n\n祝您旅途顺利!\n",
+     "finish_reason": "end_turn"
+    }
+   }
+  ],
+  "status": {
+   "code": "OK"
+  }
+ },
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_airlineagent_v3.DEFAULT",
+    "service.name": "tauairline_airlineagent_v3.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "55913493-610b-4474-a6ad-7d44a1247a99",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_airlineagent_v3-EXAMPLE0002/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_airlineagent_v3-EXAMPLE0002-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "strands.telemetry.tracer",
+   "version": ""
+  },
+  "traceId": "6a8ef2002e56c7ab653c4b53790a88da",
+  "spanId": "c38c5ab1f6ac4975",
+  "parentSpanId": "360e6e88e158b238",
+  "flags": 256,
+  "name": "execute_tool transfer_to_human_agents",
+  "kind": "INTERNAL",
+  "startTimeUnixNano": 1787753123372976662,
+  "endTimeUnixNano": 1787753123373833998,
+  "durationNano": 857336,
+  "attributes": {
+   "aws.local.service": "tauairline_airlineagent_v3.DEFAULT",
+   "gen_ai.tool.status": "success",
+   "gen_ai.tool.call.id": "tooluse_15ZfIzODuGUUIUzfSauDdG",
+   "gen_ai.tool.description": "当且仅当请求超出处理范围时,转人工。",
+   "gen_ai.tool.json_schema": "{\"properties\": {\"summary\": {\"description\": \"Parameter summary\", \"type\": \"string\"}}, \"required\": [\"summary\"], \"type\": \"object\"}",
+   "aws.genai.span_kind": "TOOL",
+   "gen_ai.event.start_time": "2026-08-26T14:05:23.373005+00:00",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "gen_ai.provider.name": "strands-agents",
+   "gen_ai.operation.name": "execute_tool",
+   "gen_ai.event.end_time": "2026-08-26T14:05:23.373814+00:00",
+   "gen_ai.tool.name": "transfer_to_human_agents",
+   "PlatformType": "AWS::BedrockAgentCore",
+   "session.id": "evaltest-202608261402-a21f78ee45d54295909e8c2fd73c45a6",
+   "gen_ai.system": "strands-agents"
+  },
+  "events": [
+   {
+    "timeUnixNano": 1787753123373050872,
+    "name": "gen_ai.tool.message",
+    "attributes": {
+     "content": "{\"summary\": \"旅客林涛(用户 id: lintao_5150,订单号 BAG999)咨询三项事宜,均超出本 Agent 可处理范围,需人工客服跟进:\\n1) 托运活体宠物(一只 8 公斤的猫)的运输规则与收费标准;\\n2) 机上餐食是否可升级为海鲜餐及相应费用;\\n3) 上月已完成航班的里程补登。\\n本 Agent 可办理的范围仅限订票、改签、变更舱位、托运行李件数与超额行李费、取消订单及退款补偿,以上三项无对应工具与政策条款,故未向旅客提供任何金额或流程信息,按旅客要求转人工。\"}",
+     "role": "tool",
+     "id": "tooluse_15ZfIzODuGUUIUzfSauDdG"
+    }
+   },
+   {
+    "timeUnixNano": 1787753123373808807,
+    "name": "gen_ai.choice",
+    "attributes": {
+     "message": "[{\"text\": \"TRANSFER_DONE\"}]",
+     "id": "tooluse_15ZfIzODuGUUIUzfSauDdG"
+    }
+   }
+  ],
+  "status": {
+   "code": "OK"
+  }
+ }
+]

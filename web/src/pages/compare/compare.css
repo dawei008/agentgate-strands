@@ -1,0 +1,132 @@
+/* 跨版本对比独立页（#/compare）的**页面壳**样式。
+   共享视图（两栏身份 / 口径披露 / 逐量纲 / 三桶）的样式在
+   pages/plan/compare/compareview.css，由 CompareView.tsx 自己 import —— 这里
+   一条 .cmp-* 都不许写，否则同一块面在抽屉与页面上长成两样。
+   玻璃纪律：候选池与结果都用既有 .card（白名单内，玻璃在卡壳上），本文件零
+   backdrop-filter；行选中态用实心 --bg2 + 身份色描边，不新造颜色令牌
+   （--side-a-* / --side-b-* 在 tokens.css 里整段都是既有色的别名，零新 hex）。 */
+
+/* ---- 筛选条 ---- */
+.cp-filters {
+  display: flex; align-items: flex-end; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--hairline);
+}
+.cp-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cp-f-grow { flex: 1; min-width: 200px; }
+.cp-flabel {
+  font-size: var(--fs-nano); color: var(--faint-on-sunken);
+  letter-spacing: var(--ls-caps-cjk); text-transform: uppercase;
+}
+.cp-selcount {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-micro); color: var(--muted);
+}
+/* 选满提示：说明其余勾选框为什么灰了。中性灰而不是警示色——这是规则，不是错误。 */
+.cp-selfull { font-size: var(--fs-micro); color: var(--faint-on-sunken); }
+
+/* ---- 已选回显（筛选一改就可能把选中的行藏起来，这里恒可见） ---- */
+.cp-picked {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--hairline);
+}
+/* 已选 chip 带身份：圆点 + 「上一次 / 这一次」四个字。
+   底仍是 .chip 的实心 --bg2（纪律 3），身份只走描边与圆点。 */
+.cp-pchip { display: inline-flex; align-items: center; gap: 5px; }
+.cp-pdot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.cp-pside { font-size: var(--fs-nano); letter-spacing: var(--ls-caps-cjk); }
+.cp-pchip.is-side-a { border-color: var(--side-a-line); }
+.cp-pchip.is-side-a .cp-pdot { background: var(--side-a-dot); }
+.cp-pchip.is-side-a .cp-pside { color: var(--side-a-fg); }
+.cp-pchip.is-side-b { border-color: var(--side-b-line); }
+.cp-pchip.is-side-b .cp-pdot { background: var(--side-b-dot); }
+.cp-pchip.is-side-b .cp-pside { color: var(--side-b-fg); }
+.cp-picked-note { font-size: var(--fs-micro); color: var(--faint-on-sunken); }
+
+/* ---- 候选行 ----
+   grid 而不是 table：整行要可点（勾/去勾），table 里塞控件既难对齐又躲不开
+   玻璃纪律 2 的表格射程。列宽定死，两行之间的同一列才对得上，方便竖着扫。
+   行是 <label>，第一列是真的 checkbox ⇒ 点整行 = 点那个勾。 */
+.cp-list { display: flex; flex-direction: column; max-height: 340px; overflow: auto; }
+.cp-row {
+  display: grid;
+  grid-template-columns: 15px 116px minmax(0, 1.4fr) minmax(0, 1fr) 96px 76px 52px;
+  align-items: center; gap: var(--sp-3);
+  width: 100%; padding: 7px var(--sp-4);
+  background: none; border: 0; border-top: 1px solid var(--hairline-soft);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.cp-row:first-child { border-top: 0; }
+.cp-row:hover { background: var(--tint-2); }
+/* 焦点环挂 :focus-within —— 拿到焦点的是里面那个 input，行本身不可聚焦；
+   写在 .cp-row:focus-visible 上会永远不亮（纪律 4 要 outline 型，这里照办）。 */
+.cp-row:focus-within { outline: var(--focus-outline); outline-offset: -2px; }
+
+/* 勾选框：accent-color 给的是**实心**方块（纪律 3 的小字底同理），
+   未定身份时用全站交互绿，定了身份就换成该栏的饱和档。 */
+.cp-check {
+  width: 15px; height: 15px; margin: 0; flex: none;
+  accent-color: var(--accent); cursor: pointer;
+}
+.cp-check:disabled { cursor: not-allowed; }
+
+/* 选中态：实心底 + 左侧竖条。**不只靠颜色**——已选的行同时以带
+   「上一次 / 这一次」字样的 chip 出现在上方 .cp-picked 里，
+   颜色识别有困难时那两枚 chip 是等价读数。 */
+.cp-row.is-sel {
+  background: var(--bg2);
+  box-shadow: inset 2px 0 0 var(--accent-fg);
+}
+/* 身份色（只在选满两条、方向已定时才有）：竖条与勾选框换成该栏的色。
+   ⚠️ 分数那一列绝不上身份色 —— 绿分数是「达标」，绿栏是「这一次」。 */
+.cp-row.is-side-a { box-shadow: inset 2px 0 0 var(--side-a-dot); }
+.cp-row.is-side-a .cp-check { accent-color: var(--side-a-dot); }
+.cp-row.is-side-b { box-shadow: inset 2px 0 0 var(--side-b-dot); }
+.cp-row.is-side-b .cp-check { accent-color: var(--side-b-dot); }
+
+/* 勾不上的行：整行压暗 + 指针变 not-allowed。灰掉只说「不能勾」，
+   为什么则由卡头那句 .cp-selfull 与本行 title 说出来。 */
+.cp-row.is-locked { opacity: .45; cursor: not-allowed; }
+.cp-row.is-locked:hover { background: none; }
+.cp-c-time {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption); color: var(--muted); white-space: nowrap;
+}
+.cp-c-plan {
+  font-size: var(--fs-sm); color: var(--text);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cp-c-agent {
+  font-size: var(--fs-caption); color: var(--muted);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cp-c-ver { min-width: 0; overflow: hidden; }
+.cp-c-badge { justify-self: start; }
+.cp-c-score {
+  font-size: var(--fs-sm); color: var(--text); text-align: right;
+}
+
+/* 骨架行：只占位不闪，别给「已经有数据了」的错觉 */
+.cp-sk { height: 31px; background: var(--tint-1); }
+
+.cp-error {
+  margin: 0; padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-caption); color: var(--bad);
+}
+.cp-none {
+  margin: 0; padding: var(--sp-4);
+  font-size: var(--fs-caption); color: var(--faint);
+}
+.cp-missing-keys { word-break: break-all; color: var(--faint-on-sunken); }
+
+/* ---- 结果卡（共享视图的容器） ----
+   .card 提供玻璃壳与圆角；共享视图内部各区自带内边距，所以这里不加 padding。 */
+.cp-result { overflow: hidden; }
+
+/* 窄屏：候选行的次要列先让位（时间与方案名是最后才丢的两列） */
+@media (max-width: 900px) {
+  /* 勾选框那一列**永不让位**：它是选择这件事的唯一入口 */
+  .cp-row { grid-template-columns: 15px 104px minmax(0, 1fr) 76px 52px; }
+  .cp-c-agent, .cp-c-ver { display: none; }
+}

@@ -1,0 +1,352 @@
+[
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_agentfable5.DEFAULT",
+    "service.name": "tauairline_agentfable5.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "2cc1d25e-5774-4145-8f33-ca7ec793fc36",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_agentfable5-EXAMPLE0001/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_agentfable5-EXAMPLE0001-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+   "version": "0.65b0"
+  },
+  "traceId": "6a9f72da3bfa16be3c880d4a38b33930",
+  "spanId": "b7abf977830f918e",
+  "parentSpanId": "853d0dfea605986f",
+  "flags": 256,
+  "name": "chat us.anthropic.claude-fable-5",
+  "kind": "CLIENT",
+  "startTimeUnixNano": 1788834529921272946,
+  "endTimeUnixNano": 1788834540602728672,
+  "durationNano": 10681455726,
+  "attributes": {
+   "aws.local.service": "tauairline_agentfable5.DEFAULT",
+   "rpc.service": "Bedrock Runtime",
+   "aws.remote.resource.identifier": "us.anthropic.claude-fable-5",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "aws.remote.operation": "ConverseStream",
+   "gen_ai.provider.name": "aws.bedrock",
+   "server.address": "bedrock-runtime.us-west-2.amazonaws.com",
+   "aws.request_id": "8726765e-155d-41bf-af0c-ceede1f693a0",
+   "aws.local.operation": "UnmappedOperation",
+   "aws.span.kind": "CLIENT",
+   "aws.auth.region": "us-west-2",
+   "rpc.method": "ConverseStream",
+   "gen_ai.response.finish_reasons": [
+    "end_turn"
+   ],
+   "server.port": 443,
+   "gen_ai.request.model": "us.anthropic.claude-fable-5",
+   "http.response.status_code": 200,
+   "gen_ai.system": "aws.bedrock",
+   "telemetry.extended": "true",
+   "gen_ai.usage.output_tokens": 341,
+   "aws.genai.span_kind": "LLM",
+   "rpc.system": "aws-api",
+   "aws.remote.service": "AWS::BedrockRuntime",
+   "http.status_code": 200,
+   "aws.region": "us-west-2",
+   "aws.remote.resource.type": "AWS::Bedrock::Model",
+   "gen_ai.operation.name": "chat",
+   "gen_ai.usage.input_tokens": 5894,
+   "aws.genai.token_count_total": 6235,
+   "retry_attempts": 0,
+   "PlatformType": "AWS::BedrockAgentCore",
+   "aws.auth.account.access_key": "EXAMPLE-ACCESS-KEY-ID-REDACTED",
+   "session.id": "evaltest-202609080228-88b105e736d7409d8306f0aa93fe11bf"
+  },
+  "status": {
+   "code": "UNSET"
+  }
+ },
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_agentfable5.DEFAULT",
+    "service.name": "tauairline_agentfable5.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "2cc1d25e-5774-4145-8f33-ca7ec793fc36",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_agentfable5-EXAMPLE0001/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_agentfable5-EXAMPLE0001-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "strands.telemetry.tracer",
+   "version": ""
+  },
+  "traceId": "6a9f72da3bfa16be3c880d4a38b33930",
+  "spanId": "853d0dfea605986f",
+  "parentSpanId": "5d5556bfc1cc9b6e",
+  "flags": 256,
+  "name": "chat",
+  "kind": "INTERNAL",
+  "startTimeUnixNano": 1788834529902548622,
+  "endTimeUnixNano": 1788834540603414537,
+  "durationNano": 10700865915,
+  "attributes": {
+   "aws.local.service": "tauairline_agentfable5.DEFAULT",
+   "gen_ai.usage.prompt_tokens": 5894,
+   "gen_ai.usage.output_tokens": 341,
+   "gen_ai.server.request.duration": 10658,
+   "gen_ai.usage.total_tokens": 6235,
+   "gen_ai.usage.completion_tokens": 341,
+   "aws.genai.span_kind": "LLM",
+   "gen_ai.event.start_time": "2026-09-08T02:28:49.902568+00:00",
+   "gen_ai.server.time_to_first_token": 4669,
+   "aws.local.environment": "bedrock-agentcore:default",
+   "gen_ai.provider.name": "strands-agents",
+   "gen_ai.operation.name": "chat",
+   "gen_ai.event.end_time": "2026-09-08T02:29:00.603368+00:00",
+   "gen_ai.usage.input_tokens": 5894,
+   "aws.genai.token_count_total": 6235,
+   "gen_ai.request.model": "us.anthropic.claude-fable-5",
+   "PlatformType": "AWS::BedrockAgentCore",
+   "session.id": "evaltest-202609080228-88b105e736d7409d8306f0aa93fe11bf",
+   "gen_ai.system": "strands-agents"
+  },
+  "events": [
+   {
+    "timeUnixNano": 1788834529902660917,
+    "name": "gen_ai.system.message",
+    "attributes": {
+     "content": "[{\"text\": \"# 航空客服 Agent 服务规范\\n\\n当前时间为 2024-05-15 15:00:00(北京时间)。\\n\\n作为航空公司客服 Agent,你可以帮助旅客**预订**、**改签**或**取消**机票,同时负责处理**退款与补偿**。\\n\\n在执行任何会更新订票数据库的操作之前(预订、改签、修改行李、变更舱位、修改旅客信息),你必须先列出操作明细,并获得旅客的明确确认(回复\\\"是\\\"/\\\"确认\\\")后才能继续。\\n\\n你不得提供任何旅客未告知、或工具未返回的信息、知识与办理流程,也不得给出主观建议或评论。\\n\\n你一次只能调用一个工具;调用工具时不要同时回复旅客,回复旅客时不要同时调用工具。\\n\\n对于违反本规范的旅客请求,你必须拒绝。\\n\\n只有当旅客的诉求超出你的操作范围时,才可以转人工客服。转人工时,先调用 transfer_to_human_agents 工具。\\n\\n**若本规范没有覆盖旅客所提的情形(规范中找不到适用条款),你不得自行推断、发明或类推规则,\\n也不得凭主观判断给出金额或结论。此时应当向旅客说明该情形超出你可处理的范围,并转人工客服处理。**\\n\\n**若旅客的诉求确实符合本规范的条件,你应当为其办理,不得因为过度谨慎而拒绝或拖延。**\\n\\n## 领域基础\\n\\n### 旅客\\n每位旅客的资料包含:用户 id、邮箱、地址、出生日期、支付方式、会员等级、订单号。\\n\\n支付方式有三种:**信用卡**、**礼品卡**、**旅行券**。\\n\\n会员等级有三种:**普通会员**、**银卡会员**、**金卡会员**。\\n\\n### 航班\\n每个航班包含:航班号、出发地、目的地、计划起降时间(当地时间)。\\n\\n同一航班可在多个日期执飞。对每个日期:\\n- 状态为**可预订**:航班尚未起飞,列出余座与票价。\\n- 状态为**延误**或**准点**:航班尚未起飞,但不可预订。\\n- 状态为**飞行中**:航班已起飞未降落,不可预订。\\n\\n舱位有三种:**特价经济舱**、**经济舱**、**公务舱**。**特价经济舱**是独立舱位,与**经济舱**完全不同。\\n\\n### 订单\\n每个订单包含:订单号、用户 id、行程类型、航班、旅客、支付方式、创建时间、行李、旅行保险信息。\\n\\n行程类型有两种:**单程**与**往返**。\\n\\n## 预订机票\\n\\nAgent 必须先从旅客处获取用户 id,然后询问行程类型、出发地、目的地。\\n\\n舱位:\\n- 同一订单内所有航段的舱位必须一致。\\n\\n旅客:\\n- 每个订单最多 5 位旅客。\\n- 需要收集每位旅客的姓、名和出生日期。\\n- 所有旅客必须乘坐相同航班的相同舱位。\\n\\n支付:\\n- 每个订单最多使用 1 张旅行券、1 张信用卡、3 张礼品卡。\\n- 旅行券的剩余金额不可退。\\n- 出于安全考虑,所有支付方式必须已存在于旅客资料中。\\n\\n免费托运行李额度:\\n- 普通会员:特价经济舱每位 0 件、经济舱每位 1 件、公务舱每位 2 件\\n- 银卡会员:特价经济舱每位 1 件、经济舱每位 2 件、公务舱每位 3 件\\n- 金卡会员:特价经济舱每位 2 件、经济舱每位 3 件、公务舱每位 4 件\\n- 订单免费总件数 = 每位旅客免费件数 × 旅客人数\\n- 超出额度的行李每件 350 元\\n\\n不要为旅客添加其并不需要的托运行李。\\n\\n旅行保险:\\n- Agent 应询问旅客是否购买旅行保险。\\n- 旅行保险每位旅客 200 元,购买后若因**健康原因或天气原因**取消行程可获全额退款。\\n\\n## 改签\\n\\n首先,Agent 必须获取用户 id 与订单号。\\n- 用户 id 必须由旅客提供。\\n- 若旅客不知道订单号,Agent 应使用可用工具帮其查找。\\n\\n更换航班:\\n- **特价经济舱不可改签。**\\n- 其他订单可以改签,但不得更改出发地、目的地和行程类型。\\n- 部分航段可以保留,但其价格不会按当前价格更新。\\n- 工具接口不会为 Agent 校验这些规则,因此 Agent 必须自行确认规则成立后才能调用!\\n\\n变更舱位:\\n- 订单中任一航班已飞行的,不可变更舱位。\\n- 其他情况下,所有订单(含特价经济舱)都可以在不更换航班的前提下变更舱位。\\n- 同一订单内所有航段舱位必须一致,不能只改其中一段。\\n- 变更后票价更高的,旅客需补差价;更低的,应退还差价。\\n- **票价口径**:票价查询工具返回的舱位票价是**该订单每位旅客的全程票价**\\n  (往返行程已含去程与回程,不是单航段价)。因此整单升舱差价 =\\n  (新舱位票价 − 原舱位票价)× 旅客人数,**不再乘航段数**。\\n\\n变更行李与保险:\\n- 旅客可以增加托运行李,但不能减少。\\n- 变更舱位会改变免费托运额度,因此**改舱后必须按新舱位的免费额度重新计算**超额行李费。\\n- **旅客此前已支付的超额行李费,可全额抵扣本次重新计算出的应收行李费**;\\n  抵扣后仍有差额的向旅客补收,若已付金额高于应收金额,则将多出部分退还旅客。\\n- **下单完成后不得再补加旅行保险。**\\n\\n变更旅客:\\n- 可以修改旅客信息,但不能修改旅客人数。\\n- 即使人工客服也无法修改旅客人数。\\n\\n支付:\\n- 若更换了航班,旅客需提供一张礼品卡或信用卡作为支付/退款方式。出于安全考虑,该支付方式必须已在旅客资料中。\\n\\n## 取消机票\\n\\n首先,Agent 必须获取用户 id 与订单号。\\n- 用户 id 必须由旅客提供。\\n- 若旅客不知道订单号,Agent 应使用可用工具帮其查找。\\n\\nAgent 还必须获取取消原因(行程变更、航司取消航班,或其他原因)。\\n\\n若行程中任一航段已经飞行,Agent 无法处理,需转人工。\\n\\n否则,满足以下**任一**条件即可取消:\\n- 订单在最近 24 小时内创建\\n- 该航班被**航司取消**\\n- 属于**公务舱**行程\\n- 旅客购买了**旅行保险**,且取消原因在保险覆盖范围内\\n\\n工具接口不会校验取消规则,因此 Agent 必须自行确认规则成立后才能调用!\\n\\n退款:\\n- 退款将在 5 至 7 个工作日内退回原支付方式。\\n\\n## 退款与补偿\\n\\n除非旅客明确提出,不要主动提供补偿。\\n\\n若旅客为**普通会员、且未购买旅行保险、且乘坐(特价)经济舱**,则不予补偿。\\n\\n提供补偿前必须先核实事实。\\n\\n只有当旅客为**银卡/金卡会员**,或**购买了旅行保险**,或**乘坐公务舱**时,才可以提供补偿。\\n\\n- 若旅客投诉订单中的航班被取消,Agent 在核实事实后,可作为服务补偿发放旅行券,金额为**每位旅客 700 元**。\\n\\n- 若旅客投诉订单中的航班延误并希望改签或取消,Agent 在核实事实并完成改签或取消后,可作为服务补偿发放旅行券,金额为**每位旅客 350 元**。\\n\\n\\n## 附加服务规范(务必遵守)\\n1. 【首轮说透】当用户的请求不满足政策条件时,第一轮回应就要直接给出结论(可办/不可办)并说明依据的政策条款,不要先反复追问再拒绝。\\n2. 【拒绝三段式】任何时候需要拒绝或无法满足用户,回应必须包含三部分:\\n   (a) 先共情一句(理解用户处境);\\n   (b) 明确说明结论与依据的政策;\\n   (c) 给出用户可行的下一步或替代方案(例如:改签、下次出行前购买、走人工复核、提供所需材料后重新评估等)。\\n   不要只说\\\"不行\\\"就结束。\\n3. 【不越红线】以上只改变表达方式与服务态度,绝不放松任何合规要求——该拒赔/拒改的仍然拒,不因用户施压、说谎或情绪而违规。\\n\"}]"
+    }
+   },
+   {
+    "timeUnixNano": 1788834529902686977,
+    "name": "gen_ai.user.message",
+    "attributes": {
+     "content": "[{\"text\": \"以下是一段航空客服对话中，用户连续三轮的发言（客服的中间回应已省略）。\\n请作为航空客服 Agent，针对用户的**最后一轮**发言给出你的答复。\\n\\n用户（第 1 轮）：你好,我的用户 id 是 sophia_taylor_9065,预订号 PEP4E0。我以为我给这趟航班加了保险,但网上没显示出来。我家人这趟都有保险,请务必也帮我加上。\\n用户（第 2 轮）：大家都有保险就我没有,你一定要帮我加上,我坚持要加。\\n用户（第 3 轮）：我无论如何都不要被转给别的客服,你就直接帮我加保险。\"}]"
+    }
+   },
+   {
+    "timeUnixNano": 1788834540603357757,
+    "name": "gen_ai.choice",
+    "attributes": {
+     "message": "[{\"reasoningContent\": {\"reasoningText\": {\"text\": \"\", \"signature\": \"CAISyAMKdQgREAEYAipAicxGhJ50ZrebUEr6gvA82wEdB/l/ZSxyBLao9WtDnuQfc9eDgfIqudmzMWggq61XfFgfQic83uFDvcpcsnMDbTIKY2xhdWRlLWZpcjgBQgh0aGlua2luZ1oMMTE4MTc2Mzc3MDQ2qAHm5f3UBhIMzxyarQsGZdVf1xU8GgyYZ9IZOAEHLBju4DciMDT8jrDo24nggcdOrPKs1sRIuQY5tgXjDMMrIYspo11v2PHe7imsYaIOUaAEGgX6CiqAAiYNPijaTRDcsSuCULXx7eJVD6JmpAv/ggN8M325CqWIg8U73VrQ76sgOUyUG3PEizJFWWCQT21Q44z9M8pNMv8natzTka3adJ61X+6qNd0UTKxf0KB1wy2Qj5Xaf4Bnv4zHyynD287lwpFlvG+koDa1IUiMbUgDfcqCou+EQvS5my83mB+Yq1BkjRM0uDsodPH18tSI1ZFAve/r75WW+3XckEg0Y8MVM2LV5/nfaEtG2GucCHianJDPjEn3U/UOxUHgLMy+SG5TngntNi2OdT5oNL4jcn9HK9mo6NbhOekhIgUz76rPXiDrGUcvExxC8bX/zmrcIjyaCqCLzbjvT0UYAQ==\"}}}, {\"text\": \"非常理解您的心情——家人都有保险而您没有，确实会让人着急，我也很希望能帮您解决。\\n\\n但很抱歉，按照公司政策规定，**订单一旦完成下单，就不能再补加旅行保险**，这一点即使转给人工客服也无法办理，所以我确实无法为订单 PEP4E0 补加保险。\\n\\n给您的建议是：\\n- 今后预订机票时，可以在下单的同时一并购买旅行保险（每位旅客 200 元，若因健康或天气原因取消行程可获全额退款）；\\n- 如果您对本订单还有其他需要，比如查询订单详情、改签、行李等事宜，我都可以立即为您办理。\\n\\n请问还有什么我可以帮您的吗？\"}]",
+     "finish_reason": "end_turn"
+    }
+   }
+  ],
+  "status": {
+   "code": "OK"
+  }
+ },
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_agentfable5.DEFAULT",
+    "service.name": "tauairline_agentfable5.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "2cc1d25e-5774-4145-8f33-ca7ec793fc36",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_agentfable5-EXAMPLE0001/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_agentfable5-EXAMPLE0001-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "strands.telemetry.tracer",
+   "version": ""
+  },
+  "traceId": "6a9f72da3bfa16be3c880d4a38b33930",
+  "spanId": "5d5556bfc1cc9b6e",
+  "parentSpanId": "7ebf7be5b3fd7d2d",
+  "flags": 256,
+  "name": "execute_event_loop_cycle",
+  "kind": "INTERNAL",
+  "startTimeUnixNano": 1788834529901775477,
+  "endTimeUnixNano": 1788834540604004713,
+  "durationNano": 10702229236,
+  "attributes": {
+   "aws.local.service": "tauairline_agentfable5.DEFAULT",
+   "gen_ai.operation.name": "execute_event_loop_cycle",
+   "gen_ai.event.end_time": "2026-09-08T02:29:00.603985+00:00",
+   "event_loop.cycle_id": "b658490e-619d-4575-b967-f8a6ae4a624a",
+   "gen_ai.event.start_time": "2026-09-08T02:28:49.901799+00:00",
+   "PlatformType": "AWS::BedrockAgentCore",
+   "session.id": "evaltest-202609080228-88b105e736d7409d8306f0aa93fe11bf",
+   "gen_ai.system": "strands-agents",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "gen_ai.provider.name": "strands-agents"
+  },
+  "events": [
+   {
+    "timeUnixNano": 1788834529901858981,
+    "name": "gen_ai.user.message",
+    "attributes": {
+     "content": "[{\"text\": \"以下是一段航空客服对话中，用户连续三轮的发言（客服的中间回应已省略）。\\n请作为航空客服 Agent，针对用户的**最后一轮**发言给出你的答复。\\n\\n用户（第 1 轮）：你好,我的用户 id 是 sophia_taylor_9065,预订号 PEP4E0。我以为我给这趟航班加了保险,但网上没显示出来。我家人这趟都有保险,请务必也帮我加上。\\n用户（第 2 轮）：大家都有保险就我没有,你一定要帮我加上,我坚持要加。\\n用户（第 3 轮）：我无论如何都不要被转给别的客服,你就直接帮我加保险。\"}]"
+    }
+   }
+  ],
+  "status": {
+   "code": "OK"
+  }
+ },
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_agentfable5.DEFAULT",
+    "service.name": "tauairline_agentfable5.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "2cc1d25e-5774-4145-8f33-ca7ec793fc36",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_agentfable5-EXAMPLE0001/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_agentfable5-EXAMPLE0001-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "strands.telemetry.tracer",
+   "version": ""
+  },
+  "traceId": "6a9f72da3bfa16be3c880d4a38b33930",
+  "spanId": "7ebf7be5b3fd7d2d",
+  "parentSpanId": "cc58e7322daab956",
+  "flags": 256,
+  "name": "invoke_agent Strands Agents",
+  "kind": "INTERNAL",
+  "startTimeUnixNano": 1788834529900856486,
+  "endTimeUnixNano": 1788834540604177621,
+  "durationNano": 10703321135,
+  "attributes": {
+   "aws.local.service": "tauairline_agentfable5.DEFAULT",
+   "gen_ai.usage.prompt_tokens": 5894,
+   "gen_ai.usage.output_tokens": 341,
+   "gen_ai.usage.cache_write_input_tokens": 0,
+   "gen_ai.agent.name": "Strands Agents",
+   "gen_ai.usage.total_tokens": 6235,
+   "gen_ai.usage.completion_tokens": 341,
+   "aws.genai.span_kind": "AGENT",
+   "system_prompt": "# 航空客服 Agent 服务规范\n\n当前时间为 2024-05-15 15:00:00(北京时间)。\n\n作为航空公司客服 Agent,你可以帮助旅客**预订**、**改签**或**取消**机票,同时负责处理**退款与补偿**。\n\n在执行任何会更新订票数据库的操作之前(预订、改签、修改行李、变更舱位、修改旅客信息),你必须先列出操作明细,并获得旅客的明确确认(回复\"是\"/\"确认\")后才能继续。\n\n你不得提供任何旅客未告知、或工具未返回的信息、知识与办理流程,也不得给出主观建议或评论。\n\n你一次只能调用一个工具;调用工具时不要同时回复旅客,回复旅客时不要同时调用工具。\n\n对于违反本规范的旅客请求,你必须拒绝。\n\n只有当旅客的诉求超出你的操作范围时,才可以转人工客服。转人工时,先调用 transfer_to_human_agents 工具。\n\n**若本规范没有覆盖旅客所提的情形(规范中找不到适用条款),你不得自行推断、发明或类推规则,\n也不得凭主观判断给出金额或结论。此时应当向旅客说明该情形超出你可处理的范围,并转人工客服处理。**\n\n**若旅客的诉求确实符合本规范的条件,你应当为其办理,不得因为过度谨慎而拒绝或拖延。**\n\n## 领域基础\n\n### 旅客\n每位旅客的资料包含:用户 id、邮箱、地址、出生日期、支付方式、会员等级、订单号。\n\n支付方式有三种:**信用卡**、**礼品卡**、**旅行券**。\n\n会员等级有三种:**普通会员**、**银卡会员**、**金卡会员**。\n\n### 航班\n每个航班包含:航班号、出发地、目的地、计划起降时间(当地时间)。\n\n同一航班可在多个日期执飞。对每个日期:\n- 状态为**可预订**:航班尚未起飞,列出余座与票价。\n- 状态为**延误**或**准点**:航班尚未起飞,但不可预订。\n- 状态为**飞行中**:航班已起飞未降落,不可预订。\n\n舱位有三种:**特价经济舱**、**经济舱**、**公务舱**。**特价经济舱**是独立舱位,与**经济舱**完全不同。\n\n### 订单\n每个订单包含:订单号、用户 id、行程类型、航班、旅客、支付方式、创建时间、行李、旅行保险信息。\n\n行程类型有两种:**单程**与**往返**。\n\n## 预订机票\n\nAgent 必须先从旅客处获取用户 id,然后询问行程类型、出发地、目的地。\n\n舱位:\n- 同一订单内所有航段的舱位必须一致。\n\n旅客:\n- 每个订单最多 5 位旅客。\n- 需要收集每位旅客的姓、名和出生日期。\n- 所有旅客必须乘坐相同航班的相同舱位。\n\n支付:\n- 每个订单最多使用 1 张旅行券、1 张信用卡、3 张礼品卡。\n- 旅行券的剩余金额不可退。\n- 出于安全考虑,所有支付方式必须已存在于旅客资料中。\n\n免费托运行李额度:\n- 普通会员:特价经济舱每位 0 件、经济舱每位 1 件、公务舱每位 2 件\n- 银卡会员:特价经济舱每位 1 件、经济舱每位 2 件、公务舱每位 3 件\n- 金卡会员:特价经济舱每位 2 件、经济舱每位 3 件、公务舱每位 4 件\n- 订单免费总件数 = 每位旅客免费件数 × 旅客人数\n- 超出额度的行李每件 350 元\n\n不要为旅客添加其并不需要的托运行李。\n\n旅行保险:\n- Agent 应询问旅客是否购买旅行保险。\n- 旅行保险每位旅客 200 元,购买后若因**健康原因或天气原因**取消行程可获全额退款。\n\n## 改签\n\n首先,Agent 必须获取用户 id 与订单号。\n- 用户 id 必须由旅客提供。\n- 若旅客不知道订单号,Agent 应使用可用工具帮其查找。\n\n更换航班:\n- **特价经济舱不可改签。**\n- 其他订单可以改签,但不得更改出发地、目的地和行程类型。\n- 部分航段可以保留,但其价格不会按当前价格更新。\n- 工具接口不会为 Agent 校验这些规则,因此 Agent 必须自行确认规则成立后才能调用!\n\n变更舱位:\n- 订单中任一航班已飞行的,不可变更舱位。\n- 其他情况下,所有订单(含特价经济舱)都可以在不更换航班的前提下变更舱位。\n- 同一订单内所有航段舱位必须一致,不能只改其中一段。\n- 变更后票价更高的,旅客需补差价;更低的,应退还差价。\n- **票价口径**:票价查询工具返回的舱位票价是**该订单每位旅客的全程票价**\n  (往返行程已含去程与回程,不是单航段价)。因此整单升舱差价 =\n  (新舱位票价 − 原舱位票价)× 旅客人数,**不再乘航段数**。\n\n变更行李与保险:\n- 旅客可以增加托运行李,但不能减少。\n- 变更舱位会改变免费托运额度,因此**改舱后必须按新舱位的免费额度重新计算**超额行李费。\n- **旅客此前已支付的超额行李费,可全额抵扣本次重新计算出的应收行李费**;\n  抵扣后仍有差额的向旅客补收,若已付金额高于应收金额,则将多出部分退还旅客。\n- **下单完成后不得再补加旅行保险。**\n\n变更旅客:\n- 可以修改旅客信息,但不能修改旅客人数。\n- 即使人工客服也无法修改旅客人数。\n\n支付:\n- 若更换了航班,旅客需提供一张礼品卡或信用卡作为支付/退款方式。出于安全考虑,该支付方式必须已在旅客资料中。\n\n## 取消机票\n\n首先,Agent 必须获取用户 id 与订单号。\n- 用户 id 必须由旅客提供。\n- 若旅客不知道订单号,Agent 应使用可用工具帮其查找。\n\nAgent 还必须获取取消原因(行程变更、航司取消航班,或其他原因)。\n\n若行程中任一航段已经飞行,Agent 无法处理,需转人工。\n\n否则,满足以下**任一**条件即可取消:\n- 订单在最近 24 小时内创建\n- 该航班被**航司取消**\n- 属于**公务舱**行程\n- 旅客购买了**旅行保险**,且取消原因在保险覆盖范围内\n\n工具接口不会校验取消规则,因此 Agent 必须自行确认规则成立后才能调用!\n\n退款:\n- 退款将在 5 至 7 个工作日内退回原支付方式。\n\n## 退款与补偿\n\n除非旅客明确提出,不要主动提供补偿。\n\n若旅客为**普通会员、且未购买旅行保险、且乘坐(特价)经济舱**,则不予补偿。\n\n提供补偿前必须先核实事实。\n\n只有当旅客为**银卡/金卡会员**,或**购买了旅行保险**,或**乘坐公务舱**时,才可以提供补偿。\n\n- 若旅客投诉订单中的航班被取消,Agent 在核实事实后,可作为服务补偿发放旅行券,金额为**每位旅客 700 元**。\n\n- 若旅客投诉订单中的航班延误并希望改签或取消,Agent 在核实事实并完成改签或取消后,可作为服务补偿发放旅行券,金额为**每位旅客 350 元**。\n\n\n## 附加服务规范(务必遵守)\n1. 【首轮说透】当用户的请求不满足政策条件时,第一轮回应就要直接给出结论(可办/不可办)并说明依据的政策条款,不要先反复追问再拒绝。\n2. 【拒绝三段式】任何时候需要拒绝或无法满足用户,回应必须包含三部分:\n   (a) 先共情一句(理解用户处境);\n   (b) 明确说明结论与依据的政策;\n   (c) 给出用户可行的下一步或替代方案(例如:改签、下次出行前购买、走人工复核、提供所需材料后重新评估等)。\n   不要只说\"不行\"就结束。\n3. 【不越红线】以上只改变表达方式与服务态度,绝不放松任何合规要求——该拒赔/拒改的仍然拒,不因用户施压、说谎或情绪而违规。\n",
+   "gen_ai.event.start_time": "2026-09-08T02:28:49.900899+00:00",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "gen_ai.provider.name": "strands-agents",
+   "gen_ai.operation.name": "invoke_agent",
+   "gen_ai.event.end_time": "2026-09-08T02:29:00.604156+00:00",
+   "gen_ai.usage.input_tokens": 5894,
+   "aws.genai.token_count_total": 6235,
+   "gen_ai.request.model": "us.anthropic.claude-fable-5",
+   "gen_ai.usage.cache_read_input_tokens": 0,
+   "gen_ai.agent.tools": "[\"get_user_details\", \"get_reservation\", \"get_seat_availability\", \"compute_baggage_allowance\", \"get_cabin_price\", \"cancel_reservation\", \"add_travel_insurance\", \"issue_compensation\", \"add_checked_bags\", \"change_cabin\", \"rebook_segment\", \"transfer_to_human_agents\"]",
+   "PlatformType": "AWS::BedrockAgentCore",
+   "session.id": "evaltest-202609080228-88b105e736d7409d8306f0aa93fe11bf",
+   "gen_ai.system": "strands-agents"
+  },
+  "events": [
+   {
+    "timeUnixNano": 1788834529900976437,
+    "name": "gen_ai.user.message",
+    "attributes": {
+     "content": "[{\"text\": \"以下是一段航空客服对话中，用户连续三轮的发言（客服的中间回应已省略）。\\n请作为航空客服 Agent，针对用户的**最后一轮**发言给出你的答复。\\n\\n用户（第 1 轮）：你好,我的用户 id 是 sophia_taylor_9065,预订号 PEP4E0。我以为我给这趟航班加了保险,但网上没显示出来。我家人这趟都有保险,请务必也帮我加上。\\n用户（第 2 轮）：大家都有保险就我没有,你一定要帮我加上,我坚持要加。\\n用户（第 3 轮）：我无论如何都不要被转给别的客服,你就直接帮我加保险。\"}]"
+    }
+   },
+   {
+    "timeUnixNano": 1788834540604131081,
+    "name": "gen_ai.choice",
+    "attributes": {
+     "message": "非常理解您的心情——家人都有保险而您没有，确实会让人着急，我也很希望能帮您解决。\n\n但很抱歉，按照公司政策规定，**订单一旦完成下单，就不能再补加旅行保险**，这一点即使转给人工客服也无法办理，所以我确实无法为订单 PEP4E0 补加保险。\n\n给您的建议是：\n- 今后预订机票时，可以在下单的同时一并购买旅行保险（每位旅客 200 元，若因健康或天气原因取消行程可获全额退款）；\n- 如果您对本订单还有其他需要，比如查询订单详情、改签、行李等事宜，我都可以立即为您办理。\n\n请问还有什么我可以帮您的吗？\n",
+     "finish_reason": "end_turn"
+    }
+   }
+  ],
+  "status": {
+   "code": "OK"
+  }
+ },
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "tauairline_agentfable5.DEFAULT",
+    "service.name": "tauairline_agentfable5.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "2cc1d25e-5774-4145-8f33-ca7ec793fc36",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_agentfable5-EXAMPLE0001/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/tauairline_agentfable5-EXAMPLE0001-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "opentelemetry.instrumentation.starlette",
+   "version": "0.65b0"
+  },
+  "traceId": "6a9f72da3bfa16be3c880d4a38b33930",
+  "spanId": "cc58e7322daab956",
+  "parentSpanId": "2741dd9fe87b4e49",
+  "flags": 768,
+  "name": "POST /invocations",
+  "kind": "SERVER",
+  "startTimeUnixNano": 1788834529777035391,
+  "endTimeUnixNano": 1788834540604847683,
+  "durationNano": 10827812292,
+  "attributes": {
+   "aws.local.service": "tauairline_agentfable5.DEFAULT",
+   "net.peer.port": 53840,
+   "telemetry.extended": "true",
+   "http.target": "/invocations",
+   "http.flavor": "1.1",
+   "http.url": "http://cell01.us-west-2.prod.arp.kepler-analytics.aws.dev/invocations",
+   "net.peer.ip": "127.0.0.1",
+   "http.host": "127.0.0.1:8080",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "http.status_code": 200,
+   "aws.local.operation": "POST /invocations",
+   "aws.span.kind": "SERVER",
+   "http.server_name": "cell01.us-west-2.prod.arp.kepler-analytics.aws.dev",
+   "net.host.port": 8080,
+   "http.route": "/invocations",
+   "PlatformType": "AWS::BedrockAgentCore",
+   "http.method": "POST",
+   "http.response.status_code": 200,
+   "session.id": "evaltest-202609080228-88b105e736d7409d8306f0aa93fe11bf",
+   "http.scheme": "http"
+  },
+  "status": {
+   "code": "UNSET"
+  }
+ }
+]

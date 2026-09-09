@@ -1,0 +1,27 @@
+/* 全局 toast 样式（原在 pages/workbench/workbench.css:55-76，规则逐字节搬过来）。
+   机制本身是全局的（挂 document.body，四个页面族都会弹），住在某一页的样式表里
+   只是历史落点。类名保持 .wb-toast —— 它是 DOM 契约（5 处测试按类名捞元素），
+   改名与搬迁分开做。 */
+
+/* 极简 toast（挂 body，路由切换不丢） */
+.wb-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--text);                       /* 反色 toast：亮面深字，暗底上最醒目 */
+  color: var(--bg);
+  border-radius: var(--r-control);
+  font-size: var(--fs-caption);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);      /* 浮层允许阴影 */
+  animation: wb-toast-in 160ms var(--ease);
+}
+@keyframes wb-toast-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wb-toast { animation: none; }
+}

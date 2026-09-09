@@ -1,0 +1,45 @@
+# ⚠️ gitignore 不支持行尾注释：`web/dist/  # 注释` 会被当成一整条模式而永不命中。
+# 所以下面每条注释都单独占一行。
+
+# ---------- Python / Node 产物 ----------
+__pycache__/
+*.pyc
+.venv/
+# 不写 `node_modules/`：带斜杠只匹配**目录**，而 git worktree 里常把它做成指向主库
+# 的**符号链接**，那样就不匹配、被 `git add -A` 吞进去。不带斜杠两种都盖。
+node_modules
+# pytest 缓存（根与 web/ 各会长一份）
+.pytest_cache/
+
+# ---------- 构建 / 部署产物 ----------
+infra/cdk.out/
+# Vite 产物：发布物由 runbook 现 build，不进库
+web/dist/
+# 已废弃的 vite dep 预打包缓存（cacheDir 已改到 web/.vite-cache）
+web/.vite/
+# 当前 vite/vitest cacheDir，每棵工作树一份
+web/.vite-cache/
+# tsc 增量信息
+web/tsconfig.tsbuildinfo
+
+# ---------- 本地真值配置（绝不进库） ----------
+# 部署坐标（账号 ID / 桶名 / 分发 ID / runtime ARN / user pool）属于某个具体
+# AWS 账号：**真值，不入库**。模板见 `.env.example`（占位符，已跟踪）。
+.env
+.env.local
+# 旧版 ui/ 的运行时配置：真的 Cognito clientId / 托管域
+ui/config.json
+
+# ---------- Agent 工作盘与本地诊断（内部材料，绝不上 GitHub） ----------
+# 裁定簿 / 批次台账 / 验收报告 / 内部诊断
+.scratch/
+# Claude Code 会话、worktrees、agent 定义
+.claude/
+# 浏览器守护进程的审计与网络日志
+.gstack/
+
+# ---------- 截图 / 视觉产物（本地跑出来的，非基线） ----------
+# visual.sh / QA 的当次截图与 diff（视觉基线在 web/tests/visual/baseline/，那个要进库）
+web/shots/
+# 手工上传的截图暂存
+screenshots/

@@ -1,0 +1,101 @@
+/* 评估分析页的跨 run 区块（趋势图 / 两段卡 / 采纳追踪表）的**页面壳**样式。
+   前缀 .an-*。共享件各带各的样式：趋势图体 .plan-trend-*（plan.css，随
+   ScoreTrendBody）、正文 .syn-*（SynthesisText.css）、逐用例对照 .cmp-*
+   （compareview.css）—— 这里一条都不重写。
+   玻璃纪律：三块都用既有 .card（白名单内，玻璃只在卡壳上），本文件零
+   backdrop-filter；采纳表是真 <table>（纪律 2：表格零玻璃，实心面）；chip /
+   badge 走既有 .badge / .chip（实心底，纪律 3），不新造颜色令牌。 */
+
+/* ---- 两段并排卡 ---- */
+.an-two {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5);
+}
+.an-two.is-one { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1100px) {
+  .an-two { grid-template-columns: minmax(0, 1fr); }
+}
+/* 并排两卡的下边距由 grid 的 gap 承担，卡自身的 margin 会让两卡底不对齐 */
+.an-two > .card { margin-bottom: 0; }
+.an-two { margin-bottom: var(--sp-5); }
+.an-sec-body { padding: var(--sp-3) var(--sp-4) var(--sp-2); }
+
+/* 引用 chip 的按钮态（SynthesisText 传了 onRefClick 且有落点时是 <button>）：
+   只补 UA 按钮样式的差量，字体/尺寸/底色仍归 .badge.syn-ref。 */
+.an-sections .syn-ref.is-link {
+  cursor: pointer; font: inherit;
+  font-family: var(--mono); font-size: var(--fs-nano);
+}
+.an-sections .syn-ref.is-link:hover {
+  color: var(--text); border-color: var(--line-strong); text-decoration: underline;
+}
+.an-sections .syn-ref.is-link:focus-visible {
+  outline: var(--focus-outline); outline-offset: 2px; box-shadow: none;
+}
+
+/* 卡底「引用」行：hairline 上分隔，chip 走 .badge（实心底） */
+.an-refs {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2);
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  border-top: 1px solid var(--hairline);
+}
+.an-refs .lbl {
+  font-size: var(--fs-nano); color: var(--faint);
+  letter-spacing: var(--ls-caps-cjk); margin-right: 2px;
+}
+.an-ref {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano); letter-spacing: 0;
+}
+.an-ref.is-link { cursor: pointer; }
+.an-ref.is-link:hover { color: var(--text); border-color: var(--line-strong); text-decoration: underline; }
+.an-ref.is-link:focus-visible { outline: var(--focus-outline); outline-offset: 2px; box-shadow: none; }
+
+/* ---- 采纳追踪表 ----
+   真 <table>（用户 2026-08-30：「用表格方式，显示表格线」），列宽定死，
+   零玻璃：thead 底走 .u-table 的纯 tint。 */
+.an-adopt { table-layout: fixed; }
+.an-adopt th.c-sum { width: auto; }
+.an-adopt th.c-gen { width: 150px; }
+.an-adopt th.c-state { width: 190px; }
+.an-adopt th.c-eff { width: 26%; }
+.an-adopt th.c-act { width: 56px; }
+/* 组标题行：中性 tint 底 + 计数 */
+.an-adopt tr.an-group td {
+  height: 28px; background: var(--tint-1);
+  font-size: var(--fs-micro); font-weight: 600; color: var(--muted);
+  letter-spacing: var(--ls-caps-cjk);
+}
+.an-adopt tr.an-group .cnt {
+  margin-left: var(--sp-2);
+  font-family: var(--mono); font-weight: 500; color: var(--faint-on-sunken);
+}
+/* 摘要格：主句 + 小字依据；行高由内容撑（不是 34px 单行） */
+.an-adopt td.c-sum { height: auto; padding-top: 7px; padding-bottom: 7px; line-height: 1.45; }
+.an-adopt .an-rank {
+  display: inline-block; min-width: 14px; margin-right: var(--sp-2);
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  color: var(--accent-fg);
+}
+.an-adopt .an-sum .syn-body { display: inline; }
+.an-adopt .an-sum .syn-p { display: inline; margin: 0; color: var(--text); font-size: var(--fs-sm); }
+.an-adopt .an-sub {
+  display: block; margin-top: 2px;
+  font-size: var(--fs-caption); color: var(--faint);
+}
+.an-adopt td.c-gen { font-family: var(--mono); font-variant-numeric: var(--numeric-data); color: var(--muted); }
+.an-adopt td.c-gen .seq { color: var(--text); margin-right: 6px; }
+.an-adopt td.c-eff { color: var(--text); }
+.an-adopt td.c-eff .an-eff-item { display: block; font-family: var(--mono); font-variant-numeric: var(--numeric-data); font-size: var(--fs-caption); }
+.an-adopt td.c-eff .an-empty { color: var(--faint-on-sunken); }
+.an-adopt td.c-act { text-align: right; }
+/* 「生成改进稿」失败原话：卡头下一行，hairline 下分隔 */
+.an-gen-error {
+  margin: 0; padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-caption); color: var(--bad);
+}
+/* 行级错误：接在该行之下，不清掉行、不连坐别的行 */
+.an-adopt tr.an-row-error td {
+  height: auto; padding-top: 2px; padding-bottom: 6px;
+  font-size: var(--fs-caption); color: var(--bad);
+}

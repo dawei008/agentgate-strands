@@ -1,0 +1,233 @@
+[
+  {
+    "name": "01-workbench",
+    "hash": "#/workbench",
+    "wait": 1400
+  },
+  {
+    "name": "02-workbench-empty",
+    "hash": "#/workbench",
+    "mock": "empty",
+    "wait": 1400
+  },
+  {
+    "name": "03-agents-list",
+    "hash": "#/agents"
+  },
+  {
+    "name": "04-agent-detail",
+    "hash": "#/agent/support-bot",
+    "wait": 1400,
+    "viewport": [
+      1800,
+      1020
+    ]
+  },
+  {
+    "name": "05-resources-dataset",
+    "hash": "#/datasets",
+    "wait": 1400
+  },
+  {
+    "name": "06-resources-redteam",
+    "hash": "#/datasets",
+    "wait": 1400,
+    "clicks": [
+      "[data-testid=\"testdata-tab-redteam\"]"
+    ]
+  },
+  {
+    "name": "07-resources-observe",
+    "hash": "#/datasets",
+    "wait": 1400,
+    "clicks": [
+      "[data-testid=\"testdata-tab-observe\"]"
+    ]
+  },
+  {
+    "name": "08-plan-detail",
+    "hash": "#/plan/plan-aaa111",
+    "wait": 1600
+  },
+  {
+    "name": "09-plan-editor",
+    "hash": "#/plan/plan-aaa111/edit",
+    "wait": 1400
+  },
+  {
+    "name": "10-run-detail",
+    "hash": "#/run/run-001",
+    "wait": 1600
+  },
+  {
+    "name": "11-auth-gate",
+    "hash": "#/workbench",
+    "no_auth": true,
+    "wait": 1200,
+    "viewport": [
+      1400,
+      900
+    ],
+    "full_page": false
+  },
+  {
+    "name": "12-settings-drawer",
+    "hash": "#/workbench",
+    "wait": 1000,
+    "clicks": [
+      "[data-testid=\"topnav-user\"]"
+    ],
+    "viewport": [
+      1800,
+      950
+    ],
+    "full_page": false
+  },
+  {
+    "name": "13-probe-plaintext",
+    "hash": "#/agent/support-bot/config",
+    "mock": "plaintext",
+    "wait": 1200,
+    "clicks": [
+      "[data-testid=\"agent-config-probe\"]"
+    ],
+    "viewport": [
+      1100,
+      900
+    ],
+    "full_page": false
+  },
+  {
+    "name": "14-report-drawer",
+    "hash": "#/report/plan-aaa111%232026-08-11T09%3A00%3A00Z",
+    "wait": 1600,
+    "viewport": [
+      1800,
+      950
+    ],
+    "full_page": false
+  },
+  {
+    "name": "15-bigscreen-ok",
+    "hash": "#/bigscreen",
+    "mock": "bigscreen-ok",
+    "wait": 2500,
+    "viewport": [
+      1920,
+      1080
+    ],
+    "full_page": false
+  },
+  {
+    "name": "16-bigscreen-alert",
+    "hash": "#/bigscreen",
+    "mock": "bigscreen-alert",
+    "wait": 2500,
+    "viewport": [
+      1920,
+      1080
+    ],
+    "full_page": false
+  },
+  {
+    "name": "17-run-compare",
+    "hash": "#/plan/plan-aaa111",
+    "wait": 1600,
+    "clicks": [
+      "[data-testid=\"plan-run-row-plan-aaa111#2026-08-09T03:00:00Z-compare\"]",
+      "[data-testid=\"plan-run-row-plan-aaa111#2026-08-11T09:00:00Z-compare\"]"
+    ],
+    "viewport": [
+      1800,
+      1180
+    ],
+    "full_page": false
+  },
+  {
+    "name": "18-report-advice",
+    "hash": "#/report/plan-aaa111%232026-08-11T09%3A00%3A00Z",
+    "wait": 2200,
+    "viewport": [
+      1800,
+      2900
+    ],
+    "full_page": false
+  },
+  {
+    "name": "19-evaluators",
+    "hash": "#/evaluators",
+    "wait": 1400
+  },
+  {
+    "name": "20-analysis-page",
+    "hash": "#/compare/plan-aaa111%232026-08-09T03%3A00%3A00Z/plan-aaa111%232026-08-11T09%3A00%3A00Z",
+    "wait": 1800,
+    "viewport": [
+      1800,
+      1180
+    ],
+    "full_page": true
+  },
+  {
+    "name": "21-agent-hub-optimize",
+    "hash": "#/agent/support-bot/optimize",
+    "wait": 1800,
+    "viewport": [
+      1800,
+      1180
+    ],
+    "full_page": true
+  },
+  {
+    "name": "22-report-observe",
+    "hash": "#/report/plan-ddd666%2320260904013117",
+    "wait": 2200,
+    "viewport": [
+      1800,
+      2600
+    ],
+    "full_page": false
+  },
+  {
+    "name": "23-report-badcase-drawer",
+    "hash": "#/report/plan-ddd666%2320260904013117",
+    "wait": 2200,
+    "clicks": [
+      "[data-testid=\"report-cell-0-1-conciseness\"]",
+      "[data-testid=\"report-cell-0-1-conciseness-detail-intake\"]"
+    ],
+    "viewport": [
+      1800,
+      1400
+    ],
+    "full_page": false
+  },
+  {
+    "name": "24-agent-status-topology",
+    "hash": "#/agent/support-bot",
+    "wait": 1600,
+    "clicks": [
+      "[data-testid=\"agent-topology-summary\"]",
+      "[data-testid=\"agent-topology-node\"][data-node=\"tool:bash\"]"
+    ],
+    "viewport": [
+      1800,
+      1400
+    ],
+    "full_page": true
+  },
+  {
+    "name": "25-analysis-pairs",
+    "hash": "#/compare/plan-aaa111%232026-08-09T03%3A00%3A00Z/plan-aaa111%232026-08-11T09%3A00%3A00Z",
+    "wait": 1800,
+    "clicks": [
+      "[data-testid=\"compare-tab-pairs\"]",
+      "[data-testid=\"pair-row-2\"]"
+    ],
+    "viewport": [
+      1800,
+      1180
+    ],
+    "full_page": true
+  }
+]

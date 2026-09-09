@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentGate · Agent 质量门禁</title>
+<!-- favicon：AND 门 logo 内联（与 sprite #i-logo 同构图），免独立文件 -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cpath%20d='M12%2010h12a14%2014%200%200%201%200%2028H12z'%20fill='%232456e6'/%3E%3Cpath%20d='M4%2017h8M4%2031h8'%20fill='none'%20stroke='%232456e6'%20stroke-width='4'%20stroke-linecap='round'/%3E%3Cpath%20d='M38%2024h6'%20fill='none'%20stroke='%2315803d'%20stroke-width='4'%20stroke-linecap='round'/%3E%3Ccircle%20cx='33'%20cy='24'%20r='3'%20fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  /* ============ design tokens ============
+     Bright professional: near-white canvas, white cards with hairline borders
+     and soft shadows, one restrained blue for interactive elements. Color is
+     a language: blue = actionable, green/amber/red = semantic states only.
+     Numbers align via tabular figures on the body sans; monospace is reserved
+     for code, IDs and the log console. No glow, no pulse, no scanlines. */
+  :root {
+    --bg: #f6f8fb;            /* page canvas */
+    --bg2: #f9fafb;           /* recessed surface (pre, ovline, analysis) */
+    --panel: #ffffff;         /* raised card */
+    --line: #e4e7ec;          /* hairline */
+    --line2: #cfd6e0;         /* hover hairline */
+    --text: #172033;
+    /* 三档灰必须真的拉开：原 muted/faint 逐通道只差 6/5/6，77 个文本节点糊成一个灰度 */
+    --muted: #475467;   /* 次要文字：说明、表格 muted 单元格（对白 7.7:1，Untitled UI 灰阶） */
+    --faint: #667085;   /* 最弱灰：对白 4.61:1（实测），可用于 ≥12px 的辅助文本 */
+    --accent: #2456e6;        /* single interactive blue（定案值：与 logo/favicon 硬编码同色） */
+    --accent-dim: #1947c9;
+    --accent-bg: #eaf0ff;     /* selected-state tint */
+    --good: #15803d;
+    --warn: #b45309;
+    --bad: #c92a2a;
+    --info: #1d4ed8;
+    /* 语义色的浅底/描边：徽章用，保持"色彩只给状态"的纪律 */
+    --good-bg: #f0fdf4; --good-line: #bbf7d0;
+    --warn-bg: #fffbeb; --warn-line: #fde68a;
+    --bad-bg: #fef2f2;  --bad-line: #fecaca;
+
+    /* ---- 字阶：7 级，跨度 2.5×（28→11）。之前 10 种字号挤在 4px 区间＝没有层级 ---- */
+    --fs-display: 28px;   /* KPI 数字，唯一的视觉锚点 */
+    --fs-h1: 26px;        /* 页标题 */
+    --fs-h2: 18px;        /* 卡片标题 */
+    --fs-body: 14px;      /* 正文 */
+    --fs-sm: 13px;        /* 表格单元格、表单 */
+    --fs-caption: 12px;   /* 元信息、说明 */
+    --fs-micro: 11px;     /* 表头、标签（配字距） */
+
+    /* ---- 字重 4 档：650/680 在系统字体上会回退到最近的静态字重，等于无效值 ---- */
+    --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+
+    /* ---- 控件高度：mini 按钮 / mini select / 搜索框统一（24px 是触控下限） ---- */
+    --h-control-sm: 28px;
+
+    /* ---- 4pt 间距网格：替换原先 20 种任意 padding ---- */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+    /* ---- 圆角 3 级 ---- */
+    --r-control: 6px; --r-card: 8px; --r-pill: 999px;
+    --radius: 8px;    /* 兼容旧引用 */
+
+    /* ---- 阴影 3 级（原先只有 1 级，弹层和卡片同高度＝没有纵深） ---- */
+    --sh-raised: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
+    --sh-pop: 0 4px 12px rgba(16, 24, 40, .10);
+    --sh-overlay: 0 12px 32px rgba(16, 24, 40, .16);
+    --shadow: var(--sh-raised);   /* 兼容旧引用 */
+
+    --mono: "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+    /* 西文/数字先落到系统 UI 字体（字重更稳），再兜 CJK */
+    --cjk: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-color: var(--line2) var(--bg); }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: var(--fs-body)/1.65 var(--cjk);
+  }
+  ::selection { background: rgba(36, 86, 230, .16); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* 键盘用户跳过侧栏导航直达内容 */
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--accent); color: #fff; padding: var(--sp-2) var(--sp-4);
+    border: 0; border-radius: 0 0 var(--r-control) 0;
+    font: var(--fs-sm) var(--cjk); cursor: pointer;
+  }
+  .skip-link:focus { left: 0; }
+
+  /* ============ icon system（16px SVG sprite，替换 emoji 字符）============
+     emoji 落在系统字体里，跨平台字重/基线/彩色化都不可控——这是最刺眼的廉价感来源。 */
+  .ic { width: 16px; height: 16px; flex: none; vertical-align: -3px;
+        stroke: currentColor; fill: none; stroke-width: 1.75;
+        stroke-linecap: round; stroke-linejoin: round; }
+  .ic-sm { width: 13px; height: 13px; vertical-align: -2px; }
+  /* 表格内图标挂中线，避免基线下沉把 48px 行顶高 */
+  tbody td .ic { vertical-align: middle; }
+  .ic-play { fill: currentColor; stroke: none; }
+
+  /* ============ sidebar（竖列导航：企业工具惯例，为二期导航项留位） ============ */
+  .shell { display: flex; min-height: 100vh; align-items: stretch; }
+  .side {
+    width: 208px; flex: none;
+    position: fixed; top: 0; left: 0; height: 100vh; z-index: 20;
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--panel); border-right: 1px solid var(--line);
+    padding: 24px 14px 18px;
+  }
+  .brand { font-size: 18px; line-height: 24px; font-weight: 700; letter-spacing: 0;
+           white-space: nowrap; padding: 0 10px; }
+  .brand b { color: var(--accent); font-weight: 700; }
+  /* AND 门 logo：多路输入全真才输出真（绿）——「质量门禁」的视觉双关。
+     颜色由 symbol 内的 presentation attribute 自带，此处只管排版尺寸。 */
+  .brand .mark {
+    display: inline-block; width: 24px; height: 24px;
+    margin-right: 10px; vertical-align: -6px;
+  }
+  .brand .sub { display: block; color: var(--faint); font-weight: 400;
+                font-size: 13px; line-height: 20px; margin: 6px 0 0 34px; }
+  nav { display: flex; flex-direction: column; gap: 4px; margin-top: 52px; }
+  nav button {
+    background: none; border: 0; color: var(--muted); font: var(--fs-sm) var(--cjk);
+    min-height: 40px; padding: var(--sp-2) 10px; border-radius: var(--r-control);
+    cursor: pointer; text-align: left; white-space: nowrap;
+    display: flex; align-items: center; gap: 10px;
+  }
+  nav button .ic { width: 18px; height: 18px; color: var(--faint); }
+  nav button:hover { color: #1d2939; background: #f2f4f7; }
+  nav button:hover .ic { color: #344054; }
+  nav button.on { color: var(--accent-dim); background: var(--accent-bg); font-weight: 600; }
+  nav button.on .ic { color: var(--accent); }
+  /* hairline 让底部账户区成为「结构的一部分」，而不是漂在 74% 空置区下的占位 */
+  .sidefoot { margin-top: auto; display: grid; grid-template-columns: 32px 1fr auto;
+              gap: 10px; padding: 14px 10px 0; border-top: 1px solid var(--line);
+              align-items: center; }
+  .account-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid;
+                    place-items: center; background: var(--accent-bg); color: var(--accent);
+                    font-weight: 700; font-size: 13px; }
+  .account-meta { min-width: 0; line-height: 1.35; }
+  .account-label { display: block; color: var(--text); font-size: 13px; font-weight: 600; }
+  .hspace { flex: 1; }
+  #who { display: block; color: var(--faint); font-size: 12px; white-space: nowrap;
+         overflow: hidden; text-overflow: ellipsis; }
+
+  /* 窄屏：侧栏退回横排顶栏，不做汉堡菜单 */
+  @media (max-width: 900px) {
+    .shell { flex-direction: column; }
+    .side { position: static; width: 100%; height: auto;
+            flex-direction: row; align-items: center; gap: var(--sp-3);
+            flex-wrap: wrap; row-gap: var(--sp-2);
+            border-right: 0; border-bottom: 1px solid var(--line);
+            padding: var(--sp-3) var(--sp-4); }
+    .brand .sub { display: none; }
+    nav { flex-direction: row; flex-wrap: wrap; margin: 0 0 0 var(--sp-2); }
+    .sidefoot { margin: 0 0 0 auto; flex-direction: row; align-items: center;
+                padding: 0; border-top: 0; }
+    /* column 方向下 margin:auto 会禁用 stretch，宽度得钉死，否则宽表把 main 撑出视口 */
+    main { width: 100%; margin: 0; }
+  }
+  /* 更窄：收紧导航内边距、允许换行，否则 nav 会把「退出」挤出视口 */
+  @media (max-width: 560px) {
+    .side { padding: var(--sp-2) var(--sp-3); }
+    nav { margin-left: 0; }
+    nav button { padding: 6px var(--sp-2); font-size: var(--fs-caption); }
+    .sidefoot { margin-left: auto; gap: var(--sp-2); }
+    main { padding: var(--sp-4) var(--sp-4) 64px; }
+  }
+
+  /* ============ layout ============ */
+  /* 1440：数据密集型工具不该在 1920 屏上左右各空 276px */
+  main { width: min(calc(100% - 208px), 1488px); min-width: 0;
+         margin-left: max(208px, calc(50% - 640px));
+         padding: 28px 24px 80px; }
+  .view { display: none; }
+  .view.on { display: block; animation: rise .22s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(5px); } }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  /* scrollIntoView 落点留出呼吸空隙（侧栏布局下没有 sticky 顶栏遮挡了） */
+  #reportPanel, #planEditor, #runConsolePanel, h3.sec { scroll-margin-top: 16px; }
+  /* 蓝竖条 = 标题签名：与 h3.sec 同源，页级/章节级标题统一「必带蓝条」的记忆点 */
+  h2.viewtitle { font-size: var(--fs-h1); line-height: 36px; font-weight: var(--fw-bold);
+                 margin: 0 0 24px; letter-spacing: 0; display: flex;
+                 gap: 8px; flex-wrap: wrap; align-items: baseline;
+                 position: relative; padding-left: 18px; }
+  h2.viewtitle::before { content: ""; position: absolute; left: 0; top: 4px;
+                         width: 4px; height: 28px; border-radius: 2px; background: var(--accent); }
+  h2.viewtitle .sub { display: block; color: var(--faint); font-size: 14px;
+                      line-height: 22px; font-weight: 400; margin-top: 2px;
+                      flex-basis: 100%; }
+  h2.viewtitle a.back { color: var(--muted); text-decoration: none; font-size: var(--fs-sm);
+                        display: inline-flex; align-items: center; gap: var(--sp-1); }
+  h2.viewtitle a.back:hover { color: var(--accent); }
+
+  /* ============ buttons ============ */
+  button { font-family: var(--cjk); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1);
+    background: var(--accent); color: #fff; border: 1px solid var(--accent);
+    border-radius: var(--r-control); padding: 7px var(--sp-4);
+    font-size: var(--fs-sm); font-weight: 600; line-height: 1.5;
+    cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.ghost {
+    background: var(--panel); color: var(--muted); border: 1px solid var(--line2);
+    font-weight: 500;
+  }
+  /* ghost hover 上浅蓝底：与「蓝 = 可交互」一致，反馈幅度大于换个描边色 */
+  .btn.ghost:hover { color: var(--accent-dim); border-color: var(--accent); background: var(--accent-bg); }
+  .btn.mini { padding: 0 var(--sp-3); font-size: var(--fs-caption); height: var(--h-control-sm); }
+  .btn.danger { background: var(--panel); color: var(--bad); border: 1px solid #f1b8b8; font-weight: 500; }
+  .btn.danger:hover { background: var(--bad-bg); border-color: var(--bad); }
+
+  .s-good { color: var(--good); } .s-warn { color: var(--warn); }
+  .s-bad { color: var(--bad); } .s-info { color: var(--info); }
+  .muted { color: var(--muted); } .faint { color: var(--faint); }
+  .num { font-variant-numeric: tabular-nums; }
+  .delta { font-size: var(--fs-caption); font-variant-numeric: tabular-nums;
+           margin-left: 5px; font-weight: 600; }
+  .d-up { color: var(--good); } .d-down { color: var(--bad); } .d-flat { color: var(--faint); }
+
+  /* ============ tooltip（替换原生 title：无 1s 延迟、样式统一、可键盘聚焦）============
+     展示层 = JS 维护的单例 fixed 气泡（#tipbubble）。此前用绝对定位伪元素，
+     气泡会被 .tscroll 容器裁剪（overflow-x:auto 会把 overflow-y 也计算成 auto）。
+     触发元素保留 .tip[data-tip] 结构不变，调用点零改动；定位与视口收敛见 app.js。 */
+  .tip { cursor: help; }
+  #tipbubble {
+    position: fixed; z-index: 70; width: max-content; max-width: 300px;
+    padding: var(--sp-2) var(--sp-3); border-radius: var(--r-control);
+    background: #1c2434; color: #fff;
+    font: 400 var(--fs-caption)/1.55 var(--cjk);
+    letter-spacing: 0; text-transform: none; white-space: normal; text-align: left;
+    box-shadow: var(--sh-pop);   /* 弹层用中间档：overlay 留给抽屉级 */
+    pointer-events: none;   /* 气泡不参与命中测试，扫过表格不抢 hover */
+  }
+  /* 虚下划线只在 hover 时出现：常态下几十条虚线会让表格看起来很脏 */
+  .tip-dot { border-bottom: 1px dashed transparent; }
+  .tip-dot:hover, .tip-dot:focus-visible { border-bottom-color: var(--line2); }
+  /* 10px 是 1× 屏可读下限；9px 时 ? 读成一个污点 */
+  .tip-i { display: inline-flex; align-items: center; justify-content: center;
+           width: 15px; height: 15px; border-radius: 50%;
+           border: 1px solid var(--line2); color: var(--faint);
+           font: var(--fw-semibold) 10px/1 var(--cjk); vertical-align: 1px; margin-left: 3px; }
+  .tip:hover .tip-i, .tip:focus-visible .tip-i { border-color: var(--accent); color: var(--accent); }
+
+  /* ============ status badge（替换裸字符：带底色+描边+文字）============ */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 var(--sp-2);
+    border: 1px solid; border-radius: var(--r-control);
+    font-size: var(--fs-caption); font-weight: 500; white-space: nowrap;
+  }
+  .badge-ok   { color: var(--good); background: var(--good-bg); border-color: var(--good-line); }
+  .badge-warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-line); }
+  .badge-bad  { color: var(--bad);  background: var(--bad-bg);  border-color: var(--bad-line); }
+  .badge-neutral { color: var(--faint); background: #f2f4f7; border-color: var(--line); }
+
+  /* ============ KPI 概览条（首屏视觉锚点）============ */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: var(--sp-3); margin-bottom: var(--sp-4); }
+  /* auto-fit 在中窄宽度排 3+1，第 4 张卡孤立成行——2×2 稳定 */
+  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--r-card); padding: var(--sp-4) var(--sp-5);
+    box-shadow: var(--sh-raised);
+    min-width: 0;   /* grid 项默认 min-width:auto——sparkline+大数字会把整行撑出视口 */
+    /* 左侧 3px 语义色竖条：既是品牌记忆点，又把「这张卡讲哪类事」编码进颜色 */
+    border-left: 3px solid var(--kpi-bar, var(--accent));
+  }
+  .kpi.is-alert { --kpi-bar: var(--bad); }
+  .kpi.is-neutral { --kpi-bar: var(--line2); }
+  .kpi .v { flex-wrap: wrap; }
+  .kpi .v {
+    font-size: var(--fs-display); font-weight: var(--fw-bold); line-height: 1.15;
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+    display: flex; align-items: baseline; gap: var(--sp-2);
+  }
+  /* 标签行两端对齐：副文本（迷你图/失败计数）挂在标签行右侧，
+     不再和 28px 大数字挤同一基线（$3.61 与「2 次未成功」量纲不混） */
+  .kpi .k {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: var(--sp-2); margin-top: var(--sp-1);
+    font-size: var(--fs-micro); letter-spacing: .06em;
+    color: var(--faint); text-transform: uppercase;
+  }
+  .kpi .sub { font-size: var(--fs-caption); color: var(--faint);
+              font-weight: var(--fw-regular); letter-spacing: 0; text-transform: none; }
+  .kpi.is-alert .v { color: var(--bad); }
+
+  /* sparkline：纯 SVG、无动画（用户在读数，不该动）。
+     折线降饱和让位给交互蓝（蓝=可点的信号不能被装饰图形稀释）；
+     只有末点用强蓝作「当前值」锚点；基线给参照系（见 app.js sparkline()）。 */
+  .spark { vertical-align: -2px; overflow: visible; }
+  .spark polyline { fill: none; stroke: #8ba3e8; stroke-width: 1.5;
+                    stroke-linecap: round; stroke-linejoin: round; }
+  .spark .baseline { stroke: #eceff3; stroke-width: 1; }
+  .spark .dot-last { fill: var(--accent); stroke: none; }
+  /* 通过率细条 / 红队格子：inline-block 的基线对齐会把行盒撑高，
+     vertical-align:middle 让它们挂在中线上，不参与基线下沉，行高才稳定在 48px。 */
+  /* 轨道给一点厚度和描边，否则 100% 时看起来只是一条绿线，读不出"这是个量表" */
+  .meter { display: inline-block; width: 54px; height: 6px; line-height: 6px; border-radius: 3px;
+           background: #eceff3; box-shadow: inset 0 0 0 1px rgba(16, 24, 40, .06);
+           overflow: hidden; vertical-align: middle; margin-left: var(--sp-2); }
+  .meter > i { display: block; height: 100%; background: var(--good); border-radius: 3px; }
+  .meter.is-low > i { background: var(--warn); }
+  .cells { display: inline-flex; gap: 2px; height: 10px; line-height: 10px;
+           vertical-align: middle; margin-left: var(--sp-2); }
+  .cells i { width: 6px; height: 10px; border-radius: 1.5px; background: var(--good-line); }
+  .cells i.hit { background: var(--bad); }
+
+  /* ============ 认证失效横幅（401 唯一的恢复出口）============ */
+  .authbanner {
+    display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+    padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4);
+    border: 1px solid var(--warn-line); border-radius: var(--r-card);
+    background: var(--warn-bg); color: #7a4d0b; font-size: var(--fs-sm);
+    box-shadow: var(--sh-raised);
+  }
+  .authbanner .ic { color: var(--warn); }
+  /* 过期数据禁止交互：防止用户对着陈旧数据点「运行」再吃一个 401 */
+  .panel.stale { opacity: .5; pointer-events: none; }
+
+  /* skeleton loading */
+  .skel { height: 44px; border-radius: var(--r-control); border: 1px solid var(--line); margin: 6px 0;
+          background: linear-gradient(100deg, #f2f4f7 40%, #e9edf2 50%, #f2f4f7 60%);
+          background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  /* empty state = onboarding：48px 线性图标 + 内嵌主 CTA，不是一段裸说明。
+     虚线框是「拖拽上传」的视觉语言，空状态用它是误用——hairline 实线更稳
+     （最终生效样式见下方 2026 refresh 的 .empty 覆盖：去边框留顶部 hairline）。 */
+  .empty {
+    border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: var(--sp-10) var(--sp-6); text-align: center; color: var(--muted);
+    background: var(--panel); font-size: var(--fs-sm);
+  }
+  .empty .big { font-size: var(--fs-h2); color: var(--text); font-weight: var(--fw-semibold);
+                margin-bottom: var(--sp-2); }
+  /* stroke-width 按 viewBox 用户单位：16 的 viewBox 放大到 48px 是 3×，.6 → 视觉 1.8px */
+  .empty .eicon { width: 48px; height: 48px; stroke: var(--line2); stroke-width: .6;
+                  fill: none; stroke-linecap: round; stroke-linejoin: round;
+                  display: block; margin: 0 auto var(--sp-3); }
+  .empty .btn { margin-top: var(--sp-4); }
+
+  /* ============ panels & tables ============ */
+  .panel { background: var(--panel); border: 1px solid var(--line);
+           border-radius: var(--r-card); padding: var(--sp-4) var(--sp-5);
+           margin-bottom: var(--sp-4); box-shadow: var(--sh-raised); }
+  .panel h3 { margin: 0 0 var(--sp-3); font-size: var(--fs-h2); color: var(--text); font-weight: 600;
+              display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+  /* 卡片副标题降到 caption 级：原先只覆盖 font-weight、继承 h3 的 15px，
+     副标题和标题同字号＝层级倒置（装饰文字占地是关键数字的 18 倍） */
+  .panel h3 .h3sub, .foldpanel > summary.foldsum .h3sub {
+    font-size: var(--fs-caption); font-weight: var(--fw-regular);
+    color: var(--faint); letter-spacing: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+  /* 宽表在窄窗口横向滚动。min-width 必须 ≥ 内容自然宽（~1040px），
+     否则表格会先被压缩成竖排单字才开始滚动——那是原来 720px 的 bug。 */
+  .tscroll { overflow-x: auto; }
+  /* 1100：1440 视口减侧栏(208)+页边距+卡片内边距后可用约 1148px——
+     1240 会让满宽屏幕也出现横向滚动，成本列被裁一半 */
+  .tscroll > table { min-width: 1100px; }
+  .tscroll.narrow > table { min-width: 720px; }
+  th, td { text-align: left; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid #eef0f4; }
+  th { color: var(--faint); font-weight: 500; font-size: var(--fs-micro);
+       letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.rowlink { cursor: pointer; }
+  /* hover 比 bg2 再深一档：bg2 与白的差几乎不可见，反馈要看得见才算反馈 */
+  tr.rowlink:hover td { background: #f1f4f8; }
+  /* 固定行高 + 截断：长方案名不再把行撑到 274px，纵向扫读有稳定节奏。
+     行内的 code / badge / meter 都钉住 line-height，否则它们会把行盒顶高。 */
+  /* 固定单元格高度 + 去掉纵向 padding：表格单元格默认垂直居中，
+     这样行高恒为 48px，不受行内 code / badge / meter / 图标各自基线的影响
+     （靠调 line-height/vertical-align 去凑总会漏，48↔60px 抖动就是这么来的）。
+     注意：td 的 height 在表格布局里只是"最小值"，真正防换行要靠 white-space。 */
+  tbody td { height: 48px; padding-top: 0; padding-bottom: 0; line-height: 1.45; }
+  /* 表体默认不换行：长内容一律截断（配 .clip / tooltip 看全文），
+     否则 4 环节链、超长方案名会把行顶到 55~73px。 */
+  #planTable tbody td, #recentRuns tbody td, #agentTable tbody td,
+  #agentPlanList tbody td, #agentRuns tbody td, #runHistory tbody td {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  tbody td code { line-height: 18px; display: inline-block; vertical-align: middle; }
+  tbody td .badge { height: 20px; line-height: 18px; vertical-align: middle; }
+  /* 300：预估明细收进 tooltip 后省出的空间给方案名，长名不必截那么狠 */
+  td.clip { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 结果格不换行：换行会把行高顶起来，纵向节奏就乱了 */
+  td.result { white-space: nowrap; }
+  /* sticky 表头：长列表滚动时列名不丢。
+     bg2 底：强化表头，也把 canvas→panel→recessed 第三层带进首屏（工作台原本 0 处 bg2） */
+  thead th { position: sticky; top: 0; z-index: 2;
+             background: var(--bg2); box-shadow: inset 0 -1px 0 var(--line); }
+  /* 可排序表头：按钮必须"看不出是按钮"，只在 hover 时给底色，
+     否则常态下像一个悬浮控件，比不可排序的表头更抢眼。 */
+  th.th-sort { padding: 0; }
+  th.th-sort .thbtn {
+    display: flex; align-items: center; gap: var(--sp-1);
+    width: 100%; background: transparent; border: 0; cursor: pointer;
+    padding: var(--sp-2) var(--sp-3); color: inherit; border-radius: 0;
+    font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: inherit;
+    -webkit-appearance: none; appearance: none;   /* 否则 UA 默认按钮底色会透出来 */
+  }
+  th.th-sort.num .thbtn { justify-content: flex-end; }
+  th.th-sort .thbtn:hover { color: var(--text); background: rgba(16, 24, 40, .035); }
+  th.th-sort.on .thbtn { color: var(--text); }
+  .sortic { opacity: 0; transition: opacity .12s; color: var(--faint); flex: none; }
+  th.th-sort .thbtn:hover .sortic { opacity: .55; }
+  .sortic.on { opacity: 1; color: var(--accent); }
+  /* 预估格：主数字加粗对齐便于纵向比较；分环节明细收进 ? tooltip
+     （原同行明细被 sticky 操作列硬切成半个字——省略号在 175px、遮挡在 1304px，永不重合）。
+     列宽从 260px 释放给「上次结果」列。 */
+  td.estcell { white-space: nowrap; }
+  th.est-col, td.estcell { min-width: 90px; }
+  td.result, th.result-col { min-width: 320px; }
+  /* 操作列钉在右侧：nowrap 让表变宽后，「运行」不能被挤出可视区 */
+  td.actions { position: sticky; right: 0; background: var(--panel);
+               box-shadow: -6px 0 8px -6px rgba(16, 24, 40, .12); }
+  tr.rowlink:hover td.actions { background: #f1f4f8; }
+  /* 行内操作降次级：一行数据最重的视觉元素不该是按钮。
+     主色实心只留页面级主操作（+ 新建方案 / 方案详情页头的运行）。 */
+  td.actions .btn:not(.danger) { background: var(--panel); color: var(--accent);
+                    border-color: var(--line2); font-weight: var(--fw-medium); }
+  td.actions .btn:not(.danger):hover { background: var(--accent-bg); border-color: var(--accent);
+                          color: var(--accent-dim); }
+  /* Agent 表「移除」是 3/4 行为空的破坏性操作：hover/聚焦行才显现，消掉空白带 */
+  td.ag-actions .btn { opacity: 0; transition: opacity .12s; }
+  tr:hover td.ag-actions .btn, td.ag-actions .btn:focus-visible { opacity: 1; }
+  code { font-family: var(--mono); font-size: var(--fs-caption); color: #344054;
+         background: #f2f4f7; border-radius: var(--r-control); padding: 0 5px; }
+  pre { font: var(--fs-caption)/1.6 var(--mono); white-space: pre-wrap; word-break: break-word;
+        background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-control);
+        padding: var(--sp-3); margin: var(--sp-2) 0; }
+  a.qlink, .qlink { color: var(--accent); text-decoration: none; font-weight: 500; }
+  a.qlink:hover, tr.rowlink:hover .qlink { text-decoration: underline; }
+  /* 12px + #5b6880：对 #f2f4f7 灰底 4.62:1 过 AA（原 11px faint 只有 3.42:1，像禁用态） */
+  .srcbadge {
+    display: inline-block; font: var(--fs-caption) var(--mono); letter-spacing: .06em;
+    color: #5b6880; background: #f2f4f7; border: 1px solid var(--line);
+    border-radius: var(--r-control); padding: 0 6px; vertical-align: 1px; text-transform: uppercase;
+  }
+
+  .controls { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center;
+              margin: var(--sp-2) 0; }
+  input[type=text], input[type=number], input[type=password], select, textarea {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line2);
+    border-radius: var(--r-control); padding: 6px var(--sp-3); font: var(--fs-sm) var(--cjk);
+  }
+  /* 原生 OS 下拉箭头与整套自定义控件割裂——统一为 14px 线性箭头（多选框除外） */
+  select:not([multiple]) {
+    appearance: none; -webkit-appearance: none;
+    padding-right: 30px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2378849c' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4.4,6.4 8,10 11.6,6.4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; background-size: 14px;
+  }
+  select.mini-sel { padding: 0 26px 0 var(--sp-2); font-size: var(--fs-caption); color: var(--muted);
+                    height: var(--h-control-sm); }
+  /* 同一横排的搜索框与按钮/下拉共高（原 22/24/26 三种高度基线对不齐） */
+  #planSearch { height: var(--h-control-sm); }
+  textarea { width: 100%; font-family: var(--mono); font-size: var(--fs-caption); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none;
+    box-shadow: 0 0 0 3px rgba(36, 86, 230, .12); }
+  input.invalid, input.invalid:focus { border-color: var(--bad);
+    box-shadow: 0 0 0 3px rgba(201, 42, 42, .12); }
+  label.inline { display: flex; gap: var(--sp-2); align-items: center;
+                 color: var(--muted); font-size: var(--fs-sm); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .chips label {
+    border: 1px solid var(--line2); border-radius: var(--r-pill); padding: 3px var(--sp-3);
+    font-size: var(--fs-caption); color: var(--muted); cursor: pointer; user-select: none;
+    background: var(--panel);
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .chips label:has(input:checked) { border-color: var(--accent); color: var(--accent-dim);
+                                    background: var(--accent-bg); font-weight: 500; }
+  .chips input { display: none; }
+
+  details { border: 1px solid var(--line); border-radius: var(--r-control);
+            padding: var(--sp-2) var(--sp-4); margin: var(--sp-3) 0; background: var(--panel); }
+  details summary { cursor: pointer; color: var(--muted); font-size: var(--fs-sm); }
+  details[open] summary { margin-bottom: var(--sp-2); }
+
+  /* ============ plan head（方案详情页头） ============ */
+  .planhead { display: flex; flex-direction: column; gap: 5px; font-size: var(--fs-sm); }
+  .trendrow { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: nowrap;
+              margin: var(--sp-1) 0; }
+  .trendrow .lbl { color: var(--faint); font-size: var(--fs-micro); width: 64px; flex: none; }
+  .trendrow .spark { flex: none; }
+  .trend-vals { font-size: var(--fs-caption); font-variant-numeric: tabular-nums;
+                color: var(--muted); letter-spacing: .02em; }
+  /* 只管字重，颜色交给语义类（s-good/s-warn/s-bad）；无语义类时才兜底 --text。
+     原先无条件 color:--text 特异度更高，把判色逻辑整个吃掉了——红队攻破 1/8 全灰。 */
+  .trend-vals b { font-weight: var(--fw-bold); }
+  .trend-vals b:not(.s-good):not(.s-warn):not(.s-bad) { color: var(--text); }
+
+  /* ---- 方案详情页三卡差异化：原先 4 张卡 computed style 逐字节相同＝无分组 ---- */
+  /* 趋势 = 这一页的主角：accent 竖条（延续 viewtitle 蓝条签名）+ 中档阴影 */
+  #planTrendPanel { border-left: 3px solid var(--accent); box-shadow: var(--sh-pop); }
+  /* 运行历史 = 明细档案：降一档，去掉阴影，表格保持白底可读 */
+  #runHistoryPanel { box-shadow: none; background: var(--bg2); }
+  #runHistoryPanel .tscroll table { background: var(--panel); }
+  /* 详情页只有一个方案的环节，不需要为工作台三环节结果留的 320px 宽 */
+  #runHistory td.result { min-width: 0; }
+  /* 行内操作 = 文字链：8 个重复按钮框是右侧竖带噪声；常态低调，行 hover 时显形。
+     行本身仍不可点（成功→查看报告 / 失败→查看原因 是两种语义，操作留在明确元素上） */
+  .rowact { background: none; border: 0; padding: 0; cursor: pointer;
+            font: var(--fs-sm) var(--cjk); font-weight: var(--fw-medium);
+            color: var(--accent); text-decoration: none; }
+  #runHistory tbody tr:hover .rowact { text-decoration: underline; }
+  .rowact:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* 行 hover 提示「这一行是一个整体」，但不声明整行可点（cursor 仍为 auto） */
+  #runHistory tbody tr:hover td { background: #f1f4f8; }
+
+  /* ---- 综合报告空态：压成一行提示条，不占整卡的纵向节奏（面板与下拉 DOM 保留） ---- */
+  #synthesisPanel.is-empty { padding: var(--sp-2) var(--sp-5); box-shadow: none; background: var(--bg2); }
+  /* inline-flex 让标题与空态说明同行，真正压成一行提示条（~40px） */
+  #synthesisPanel.is-empty h3 { margin-bottom: 0; font-size: var(--fs-sm); display: inline-flex; }
+  #synthesisPanel.is-empty h3 .h3sub { display: none; }
+  #synthesisPanel.is-empty #synthesisBody { display: inline; margin-left: var(--sp-2);
+                                            font-size: var(--fs-caption); }
+
+  /* ---- 更多操作菜单（原生 details）：删除方案收进来，不再与「运行」并排常驻 ---- */
+  .moremenu { border: 0; padding: 0; margin: 0; background: none; position: relative; }
+  .moremenu > summary { list-style: none; }
+  .moremenu > summary::-webkit-details-marker { display: none; }
+  /* 全局 details[open] summary 会加 margin-bottom，弹出菜单不需要这个位移 */
+  .moremenu[open] > summary { margin-bottom: 0; }
+  .mm-pop { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20;
+            min-width: 160px; padding: var(--sp-1);
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: var(--r-card); box-shadow: var(--sh-overlay); }
+  .mm-item { display: block; width: 100%; text-align: left; background: none; border: 0;
+             padding: var(--sp-2) var(--sp-3); border-radius: var(--r-control);
+             font: var(--fs-sm) var(--cjk); color: var(--muted); cursor: pointer; }
+  .mm-item:hover { background: rgba(16, 24, 40, .04); color: var(--text); }
+  .mm-item.danger { color: var(--bad); }
+  .mm-item.danger:hover { background: var(--bad-bg); }
+
+  /* ============ 方案编辑器：添加环节（三种类型是并列的同级选项 → 三选一卡片） ============ */
+  .stage-add { margin: var(--sp-4) 0; }
+  .sa-title { font-size: var(--fs-micro); letter-spacing: .06em; color: var(--faint);
+              text-transform: uppercase; margin-bottom: var(--sp-2); }
+  /* 零环节初始态：此区就是主操作，标题升格为引导语（正文字号常规大小写），
+     卡片区带浅底围合，与"已有环节后追加"的次级形态区分 */
+  .stage-add.is-primary { border: 1px solid var(--line); border-radius: var(--r-card);
+                          background: var(--bg2); padding: var(--sp-4); }
+  .stage-add.is-primary .sa-title { font-size: var(--fs-h2); font-weight: 600;
+                                    color: var(--text); letter-spacing: 0; text-transform: none; }
+  .sa-sub { font-size: var(--fs-caption); font-weight: 400; color: var(--faint);
+            letter-spacing: 0; margin-left: var(--sp-2); }
+  /* 空环节点保存：错误提示落回选择区（红描边闪一下引视线，reduced-motion 下全局禁用） */
+  .stage-add.sa-attn { animation: sa-attn 1.4s ease; }
+  @keyframes sa-attn { 0%, 60% { border-color: var(--bad);
+                                 box-shadow: 0 0 0 3px rgba(201, 42, 42, .12); } }
+  /* 等宽三列：同尺寸传达"同级"；禁用卡片保留占位，结构不塌 */
+  .sa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  @media (max-width: 760px) { .sa-grid { grid-template-columns: 1fr; } }
+  .sa-card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1);
+    text-align: left; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--r-card); padding: var(--sp-3) var(--sp-4);
+    cursor: pointer; font-family: var(--cjk);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .sa-card:hover:not(:disabled) { border-color: var(--accent); box-shadow: var(--sh-raised); }
+  .sa-name { display: flex; align-items: center; width: 100%;
+             font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
+  .sa-card:hover:not(:disabled) .sa-name { color: var(--accent-dim); }
+  .sa-plus { margin-left: auto; color: var(--faint); }
+  .sa-card:hover:not(:disabled) .sa-plus { color: var(--accent); }
+  .sa-desc { font-size: var(--fs-caption); line-height: 1.55; color: var(--faint); }
+  /* 禁用：整卡降不透明度（同 .btn:disabled 的处理），底色退回画布层 */
+  .sa-card:disabled { opacity: .55; cursor: not-allowed; background: var(--bg2); }
+  .sa-note { margin-top: var(--sp-2); font-size: var(--fs-caption); color: var(--faint); }
+
+  /* ============ run console (stage rail + log) ============ */
+  .runconsole { display: grid; grid-template-columns: 200px 1fr; gap: 14px; }
+  @media (max-width: 760px) { .runconsole { grid-template-columns: 1fr; } }
+  .stagerail { display: flex; flex-direction: column; gap: 4px; }
+  .stage {
+    display: flex; align-items: center; gap: 9px; padding: 8px 11px;
+    border: 1px solid var(--line); border-radius: var(--r-control);
+    font-size: var(--fs-sm); color: var(--muted);
+    background: var(--panel);
+  }
+  .stage .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex: none; }
+  .stage.running { border-color: var(--accent); color: var(--text); background: var(--accent-bg); }
+  .stage.running .dot { background: var(--accent); animation: breathe 1.4s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .stage.done { color: var(--muted); }
+  .stage.done .dot { background: var(--good); }
+  .stage.failed .dot { background: var(--bad); }
+  /* 日志块保持深色：与页面形成功能反差，长输出更聚焦（GitHub Actions 同款处理）。
+     360px 容住 4 环节方案约 14 行；底部渐隐提示「还有内容」（mask 不受 reduced-motion 影响） */
+  .runlog {
+    font: var(--fs-caption)/1.7 var(--mono); background: #101828; color: #d3dce8;
+    border: 1px solid #101828; border-radius: var(--r-control); padding: 10px 14px;
+    max-height: 360px; overflow-y: auto; margin: 0;
+    mask-image: linear-gradient(#000 calc(100% - 24px), transparent);
+    -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent);
+  }
+
+  /* overview strip on report */
+  .ovline { display: flex; align-items: baseline; gap: 12px; padding: 10px 14px;
+            border: 1px solid var(--line); border-radius: var(--r-control); margin: 8px 0;
+            background: var(--bg2); }
+  /* 12px：--faint 拉浅到 4.6:1 后，11px 小字不达 AA */
+  .ovline .k { font-size: var(--fs-caption); letter-spacing: .08em; color: var(--faint);
+               width: 74px; flex: none; }
+
+  /* ============ report body ============ */
+  .sess-details { margin-top: 8px; }
+  .sess-detail { background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-control);
+                 padding: 8px 12px; margin: 8px 0; font-size: var(--fs-sm); }
+  .analysis { background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-control);
+              padding: 4px 16px 10px; margin-bottom: 16px; }
+  /* 解析内小标题降为 13px muted：它是解析正文的内部标题，不该和 15px 章节标题争 */
+  .analysis h3 { color: var(--muted); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+                 letter-spacing: .02em; margin: 12px 0 4px; }
+  .analysis p, .analysis li { margin: 4px 0; font-size: var(--fs-sm); }
+  .score { font-variant-numeric: tabular-nums; font-weight: var(--fw-bold); }
+  .sess-ref { color: var(--info); cursor: pointer; white-space: nowrap; }
+  .sess-ref:hover { text-decoration: underline; }
+  /* 综合报告里的 [run:#N] 溯源引用：点击滚动到运行历史对应行并高亮 */
+  .run-ref { color: var(--accent); cursor: pointer; white-space: nowrap;
+             font-variant-numeric: tabular-nums; font-weight: var(--fw-medium); }
+  .run-ref:hover { text-decoration: underline; }
+  /* 高亮用静态底色 + JS 定时移除：animation 会被 prefers-reduced-motion 全局禁用 */
+  #runHistory tr.row-hl td { background: var(--accent-bg); }
+  .meta-table th { width: 110px; color: var(--faint); font-weight: 500; }
+  .prompt-draft { max-height: 320px; overflow-y: auto; }
+
+  /* ---- 改进稿：修订版提示词的逐行对比视图 ---- */
+  .diffview { font: var(--fs-caption)/1.6 var(--mono); background: var(--bg2);
+              border: 1px solid var(--line); border-radius: var(--r-control);
+              padding: var(--sp-2) 0; margin: var(--sp-2) 0;
+              max-height: 360px; overflow-y: auto; }
+  .diffview .dl { display: flex; padding: 0 var(--sp-3) 0 var(--sp-2);
+                  white-space: pre-wrap; word-break: break-word; }
+  .diffview .dl-sign { width: 14px; flex: none; color: var(--faint); user-select: none; }
+  .diffview .dl-add { background: var(--good-bg); box-shadow: inset 2px 0 0 var(--good-line); }
+  .diffview .dl-add .dl-sign { color: var(--good); }
+  .diffview .dl-del { background: var(--bad-bg); box-shadow: inset 2px 0 0 var(--bad-line); }
+  .diffview .dl-del .dl-sign { color: var(--bad); }
+  /* 连续未修改行折叠：原生 details，零 JS */
+  .diffview details.dfold { border: 0; background: none; padding: 0; margin: 0; }
+  .diffview details.dfold summary { color: var(--faint); font-size: var(--fs-micro);
+                                    padding: 1px var(--sp-3); cursor: pointer; }
+  .impv-tab.on { color: var(--accent-dim); background: var(--accent-bg);
+                 border-color: var(--accent); font-weight: 600; }
+  .warnbox { background: #fffaeb; border: 1px solid #fedf89;
+             border-radius: var(--r-control); padding: 8px 12px; font-size: var(--fs-sm);
+             margin-top: 8px; color: #7a4d0b; }
+  /* 报告页三层标题拉开：章节 15/650 > 子标题 14/600 > 解析内 13/600 muted
+     （原先三层全 14px，2.6 屏的报告扫读找不到章节边界） */
+  h3.sec { font-size: var(--fs-h2); font-weight: var(--fw-semibold); color: var(--text);
+           margin: 22px 0 8px; padding-left: 10px;
+           border-left: 3px solid var(--accent); }
+  #reportBody h4 { font-size: var(--fs-body); font-weight: var(--fw-semibold); }
+
+  /* live conversation cards (dataset/redteam) */
+  .live-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 10px; margin-top: 10px; }
+  .live-card { border: 1px solid var(--line); border-radius: var(--r-control); background: var(--panel);
+               padding: 8px 10px; font-size: var(--fs-caption); max-height: 240px; overflow-y: auto; }
+  .live-card h5 { margin: 0 0 6px; font-size: var(--fs-caption); color: var(--muted); }
+  .live-card .t-user { color: var(--info); }
+  .live-card .t-agent { color: var(--text); }
+  .live-card .t-atk { color: var(--warn); }
+
+  /* ============ drawer ============ */
+  /* z-index 高于 header(30)——遮罩必须盖住导航条，弹层才成立 */
+  #drawerMask { position: fixed; inset: 0; background: rgba(16, 24, 40, .4); z-index: 45; }
+  #drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(680px, 92vw); z-index: 46;
+    background: var(--panel); border-left: 1px solid var(--line);
+    box-shadow: -12px 0 32px rgba(16, 24, 40, .12);
+    padding: 18px 22px; overflow-y: auto;
+    animation: slidein .2s ease;
+  }
+  @keyframes slidein { from { transform: translateX(30px); opacity: 0; } }
+  #drawerTitle { font-size: 14px; margin: 0 30px 12px 0; }
+  #drawerClose { position: absolute; top: 12px; right: 14px; }
+  .tl-event { border-left: 2px solid var(--line); padding: 4px 0 4px 14px; margin: 2px 0; }
+  .tl-event.hl { border-left-color: var(--accent); background: var(--accent-bg); }
+  .tl-event .n { font: 11px var(--mono); color: var(--faint); }
+  .ev-item pre { max-height: 180px; overflow-y: auto; }
+
+  .hidden { display: none !important; }
+  .statusline { color: var(--muted); font-size: var(--fs-caption); }
+  progress { accent-color: var(--accent); width: 100%; height: 6px; }
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    background: #1c2434; color: #fff; border: 0;
+    border-radius: var(--r-control); padding: 9px 18px; font-size: var(--fs-sm); z-index: 60;
+    box-shadow: var(--sh-pop);
+  }
+
+  /* ============ 运行状态条（编辑器态的控制台替身） ============
+     运行中打开新建/编辑方案时，整版控制台会压在表单下干扰填表——
+     收成一条固定底部的细状态条，点「查看」跳回方案详情看全量控制台。 */
+  #runStatusBar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: center; gap: var(--sp-3);
+    margin: 0 auto; max-width: 1440px;
+    padding: var(--sp-2) var(--sp-6);
+    background: var(--panel); border-top: 1px solid var(--line);
+    box-shadow: var(--sh-pop);
+    font-size: var(--fs-sm); color: var(--muted);
+  }
+  #runStatusBar .dot { width: 8px; height: 8px; border-radius: 50%;
+                       background: var(--accent); flex: none;
+                       animation: breathe 1.4s ease-in-out infinite; }
+  #runStatusBar.is-done .dot { background: var(--good); animation: none; }
+  #runStatusBar .rsb-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #runStatusBar .rsb-text b { color: var(--text); font-weight: var(--fw-semibold); }
+
+  /* ============ 资源库场景分区 ============
+     两列栅格消掉宽屏下的整列空白；≤900px 退单列。
+     panel 自带 margin-bottom 在栅格内与 gap 叠加，归零由 gap 统一节奏。 */
+  .res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+              gap: var(--sp-4); align-items: start; }
+  .res-grid .panel { margin-bottom: 0; }
+  @media (max-width: 900px) { .res-grid { grid-template-columns: 1fr; } }
+  /* 场景标题旁的一句用途说明 */
+  .scene-desc { font-size: var(--fs-caption); color: var(--muted); font-weight: 400; }
+  /* 只读评估器 chip：与可选 chips 同外形，但无选中态、无手型（纯展示，非入口） */
+  .chip-ro { display: inline-flex; align-items: center; gap: 5px;
+             border: 1px solid var(--line2); border-radius: var(--r-pill); padding: 3px var(--sp-3);
+             font-size: var(--fs-caption); color: var(--muted); background: var(--panel); }
+  /* 内置评估器的适用范围徽章：仅回归可用的标注，其余默认两者皆可不标 */
+  .chip-ro .scope-badge { height: 16px; padding: 0 5px; font-size: 10px; line-height: 1; }
+
+  /* ============ 可折叠面板（details 版 .panel）============
+     全局 details 规则给了边框/内距，这里把它对齐 .panel 的视觉，
+     让「调用配置」在 Agent 详情页里和其他卡片同一节奏、但默认收起。 */
+  .panel.foldpanel { padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-4); }
+  .foldpanel > summary.foldsum {
+    font-size: var(--fs-h2); color: var(--text); font-weight: 600;
+    display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+    list-style: none; margin: 0;
+  }
+  .foldpanel > summary.foldsum::-webkit-details-marker { display: none; }
+  /* 自绘展开箭头：原生 marker 在 flex summary 下位置不可控 */
+  .foldpanel > summary.foldsum::before {
+    content: ""; width: 0; height: 0; flex: none;
+    border: 5px solid transparent; border-left-color: var(--muted);
+    transform: translateX(1px); transition: transform .15s;
+  }
+  .foldpanel[open] > summary.foldsum::before { transform: rotate(90deg) translateY(1px); }
+  .foldpanel[open] > summary.foldsum { margin-bottom: var(--sp-3); }
+  .foldpanel > summary.foldsum:hover { color: var(--accent-dim); }
+
+  /* 表单小节标题：比 h3 轻，用来切分「请求格式 / 测试连通 / 输出位置」三步 */
+  .fieldlabel { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text);
+                margin: var(--sp-3) 0 var(--sp-1); display: flex; align-items: baseline;
+                gap: var(--sp-2); flex-wrap: wrap; }
+  .fieldlabel .faint { font-weight: var(--fw-regular); font-size: var(--fs-caption); }
+
+  /* ============ 调用探测结果面板 ============ */
+  .probebox { border: 1px solid var(--line); border-radius: var(--r-card);
+              background: var(--bg2); padding: var(--sp-3) var(--sp-4); margin-top: var(--sp-3); }
+  .probebox .pb-head { display: flex; align-items: center; gap: var(--sp-2);
+                       flex-wrap: wrap; margin-bottom: var(--sp-2); }
+  .probebox .pb-err { color: var(--bad); font-size: var(--fs-sm); margin: var(--sp-2) 0; }
+  .probebox details { background: var(--panel); }
+  .probebox pre { max-height: 220px; overflow: auto; background: var(--panel); }
+  /* 最终输出高亮：绿框 = 「保存后正式运行会拿到这一段」 */
+  .probebox .pb-out { border: 1px solid var(--good-line); background: var(--good-bg);
+                      border-radius: var(--r-control); padding: var(--sp-2) var(--sp-3);
+                      margin: var(--sp-2) 0; }
+  .probebox .pb-out .pb-out-k { font-size: var(--fs-micro); color: var(--good);
+                                letter-spacing: .06em; text-transform: uppercase; }
+  .probebox .pb-out pre { margin: var(--sp-1) 0 0; background: var(--panel);
+                          border-color: var(--good-line); max-height: 160px; }
+
+  /* 响应路径列表：一行一条可点选路径 */
+  .pathlist { display: flex; flex-direction: column; gap: 2px; max-height: 300px;
+              overflow: auto; margin: var(--sp-2) 0; }
+  .pathrow { display: flex; align-items: center; gap: var(--sp-2);
+             padding: 4px var(--sp-2); border: 1px solid transparent;
+             border-radius: var(--r-control); background: var(--panel);
+             font-size: var(--fs-caption); text-align: left; width: 100%;
+             font-family: var(--cjk); color: var(--text); }
+  button.pathrow { cursor: pointer; transition: border-color .15s, background .15s; }
+  button.pathrow:hover { border-color: var(--accent); background: var(--accent-bg); }
+  .pathrow.is-on { border-color: var(--accent); background: var(--accent-bg); }
+  .pathrow.is-off { background: transparent; color: var(--faint); cursor: default; }
+  .pathrow .pr-path { font-family: var(--mono); font-size: var(--fs-caption);
+                      white-space: nowrap; flex: none; max-width: 46%;
+                      overflow: hidden; text-overflow: ellipsis; }
+  .pathrow.is-on .pr-path { color: var(--accent-dim); font-weight: var(--fw-medium); }
+  .pathrow .pr-type { font: var(--fs-micro)/1.6 var(--mono); color: var(--faint);
+                      background: #f2f4f7; border: 1px solid var(--line);
+                      border-radius: var(--r-control); padding: 0 5px; flex: none; }
+  .pathrow .pr-prev { color: var(--muted); overflow: hidden;
+                      text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .pathrow .pr-note { color: var(--faint); font-size: var(--fs-micro); }
+
+  /* ============ 2026 desktop refresh ============ */
+  .panel { border-radius: 8px; padding: 20px; box-shadow: var(--sh-raised); }
+  .panel h3 { font-size: 18px; line-height: 26px; margin-bottom: 16px; }
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .section-head h3 { margin: 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .search-field { position: relative; width: 280px; }
+  .search-field > .ic { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+                        color: var(--faint); pointer-events: none; }
+  .search-field input { width: 100% !important; height: 36px !important;
+                        padding: 7px 34px 7px 34px !important; }
+  .search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+                  width: 26px; height: 26px; padding: 0; border: 0; background: transparent;
+                  color: var(--faint); cursor: pointer; display: grid; place-items: center; }
+  .search-clear:hover { color: var(--text); }
+  #planAgentFilter { width: 160px; height: 36px; font-size: 13px; }
+  #newPlanBtn { height: 36px; padding-inline: 14px; }
+  .empty { min-height: 220px; border: 0; border-top: 1px solid var(--line);
+           border-radius: 0; display: flex; flex-direction: column;
+           align-items: center; justify-content: center; background: transparent; }
+  .empty .eicon { width: 36px; height: 36px; }
+  tbody td { height: 52px; }
+
+  .res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .res-grid .panel { min-height: 220px; }
+  .scene-title { display: grid; grid-template-columns: 34px 1fr; gap: 10px;
+                 align-items: start; margin-bottom: 18px; }
+  .scene-icon { width: 34px; height: 34px; display: grid; place-items: center;
+                border-radius: 7px; color: var(--accent); background: var(--accent-bg); }
+  .scene-icon .ic { width: 18px; height: 18px; }
+  .scene-title h3 { display: block; margin: 0; }
+  .scene-desc { display: block; margin-top: 2px; line-height: 20px; }
+  .resource-label { margin: 14px 0 6px; color: var(--muted); font-size: 13px; font-weight: 500; }
+
+  .settings-layout { display: grid; grid-template-columns: 160px minmax(0, 1fr);
+                     gap: 24px; align-items: start; }
+  .settings-nav { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 4px; }
+  .settings-nav a { min-height: 36px; display: flex; align-items: center; padding: 7px 10px;
+                    border-radius: 6px; color: var(--muted); text-decoration: none;
+                    font-size: 13px; font-weight: 500; }
+  .settings-nav a:hover, .settings-nav a.is-active { color: var(--accent-dim); background: var(--accent-bg); }
+  .settings-content { background: var(--panel); border: 1px solid var(--line);
+                      border-radius: 8px; overflow: hidden; }
+  .settings-content .settings-section { margin: 0; padding: 28px 24px; border: 0;
+                                        border-radius: 0; box-shadow: none; }
+  .settings-content .settings-section + .settings-section { border-top: 1px solid var(--line); }
+  /* settings-section 不再是 .panel，h3 要显式对齐卡片标题（否则落回浏览器默认 16.4px bold） */
+  .settings-section h3 { margin: 0 0 16px; font-size: var(--fs-h2); line-height: 26px;
+                         color: var(--text); font-weight: 600; }
+  .settings-section .setting-intro { max-width: 760px; margin: -10px 0 20px;
+                                     color: var(--faint); font-size: 13px; }
+  .settings-section .controls { max-width: 860px; }
+  .source-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+                   gap: 12px; align-items: end; }
+  .source-fields input { width: 100% !important; height: 36px; }
+  .source-fields #lfSecret, .source-fields #lfDesc { grid-column: 1 / -1; }
+  .source-fields #lfAddBtn { justify-self: start; }
+  .settings-section { scroll-margin-top: 24px; }
+  .info-box { max-width: 760px; margin-top: 14px; padding: 12px 14px;
+              display: flex; gap: 10px; align-items: flex-start;
+              border: 1px solid #b2ddff; border-radius: 6px;
+              background: #eff8ff; color: #175cd3; font-size: 13px; }
+  .info-box .ic { margin-top: 2px; }
+
+  .auth-gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+               background: var(--bg); padding: 24px; }
+  .auth-card { width: min(400px, 100%); padding: 32px; background: var(--panel);
+               border: 1px solid var(--line); border-radius: 8px;
+               box-shadow: 0 12px 32px rgba(16,24,40,.12);
+               transform: translateY(-5vh); }
+  .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 30px;
+                font-size: 22px; line-height: 30px; font-weight: 700; }
+  .auth-brand .mark { width: 32px; height: 32px; }
+  .auth-brand b { color: var(--accent); }
+  .auth-card h1 { margin: 0 0 6px; font-size: 24px; line-height: 34px; letter-spacing: 0; }
+  .auth-card > p { margin: 0 0 24px; color: var(--faint); font-size: 14px; }
+  .auth-sso { width: 100%; height: 40px; }
+  .auth-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 16px;
+               padding: 11px 12px; border-radius: 6px; background: var(--bg2);
+               color: var(--muted); font-size: 12px; line-height: 18px; }
+  body.is-authed .auth-gate { display: none; }
+  body:not(.is-authed) .shell { visibility: hidden; }
+
+  @media (max-width: 900px) {
+    .side { position: static; }
+    main { width: 100%; margin: 0; }
+    .settings-layout { grid-template-columns: 1fr; }
+    .settings-nav { position: static; flex-direction: row; overflow-x: auto; }
+    .settings-nav a { white-space: nowrap; }
+    .res-grid { grid-template-columns: 1fr; }
+    .source-fields { grid-template-columns: 1fr; }
+    .source-fields #lfSecret, .source-fields #lfDesc { grid-column: auto; }
+  }
+
+  /* 方案概览头两段式：被评估对象为主体，属性走定义网格 */
+  .ph-id { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3);
+           padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+  .ph-id a { font-size: var(--fs-h2); font-weight: var(--fw-semibold); }
+  .ph-grid { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-4);
+             margin: 0; font-size: var(--fs-sm); }
+  .ph-grid dt { color: var(--faint); font-size: var(--fs-caption); }
+  .ph-grid dd { margin: 0; }
+
+  /* 趋势主图（线上均分）：与迷你 sparkline 分工 */
+  .tchart { width: 100%; height: 160px; display: block; margin: var(--sp-2) 0; }
+  .tchart .grid { stroke: var(--line); stroke-width: 1; }
+  .tchart .axis { fill: var(--faint); font-size: 10px; }
+  .tchart .refline { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 4 3; }
+  .tchart .reftext { fill: var(--warn); }
+  .tchart .band-ok { fill: var(--good-bg); }
+  .tchart .line { fill: none; stroke: var(--accent); stroke-width: 2;
+                  stroke-linecap: round; stroke-linejoin: round; }
+  .tchart .dot-last { fill: var(--accent); }
+  .tchart .lastval { font-size: 13px; font-weight: var(--fw-bold);
+                     font-variant-numeric: tabular-nums; fill: var(--text); }
+
+  /* 概览头+趋势并排：吃掉两卡各自 60-74% 的右侧空白；编辑器展开退单列 */
+  .plan-top { display: grid; grid-template-columns: minmax(380px, 5fr) minmax(420px, 7fr);
+              gap: var(--sp-4); align-items: start; margin-bottom: var(--sp-4); }
+  .plan-top > .panel { margin-bottom: 0; height: 100%; }
+  .plan-top.is-editing { grid-template-columns: 1fr; }
+  @media (max-width: 1100px) { .plan-top { grid-template-columns: 1fr; } }
+
+  /* ============ 数据集用例表单化编辑器（.dscase）============ */
+  .dscase { border: 1px solid var(--line); border-radius: var(--r-card);
+            padding: var(--sp-3) var(--sp-4); margin: var(--sp-3) 0; background: var(--panel); }
+  .dscase-head { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+  .dscase-no { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text); }
+  .dscase-head .dc-del { margin-left: auto; }
+  .dscase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2) var(--sp-3); }
+  .dscase-grid > label, .dc-multiwrap > label {
+    display: flex; flex-direction: column; gap: 4px;
+    color: var(--muted); font-size: var(--fs-caption); }
+  .dscase-grid > .dc-full { grid-column: 1 / -1; }
+  .dscase .req { color: var(--bad); }
+  .dc-multi-toggle { margin-top: var(--sp-2); }
+  .dc-multiwrap { margin-top: var(--sp-2); padding: var(--sp-2) var(--sp-3);
+                  border-left: 2px solid var(--accent); background: var(--accent-bg);
+                  border-radius: 0 var(--r-control) var(--r-control) 0;
+                  display: flex; flex-direction: column; gap: var(--sp-2); }
+  .dc-imgrow { margin-top: var(--sp-2); display: flex; align-items: center; gap: var(--sp-2);
+               font-size: var(--fs-caption); }
+  #dsForm .empty { min-height: 120px; border-top: 0; padding: var(--sp-5) var(--sp-4); }
+  @media (max-width: 900px) { .dscase-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<!-- href 不用 #main：那会被 hash 路由当成未知路由，把用户弹回评估台 -->
+<button class="skip-link" id="skipLink" type="button">跳至主内容</button>
+
+<!-- 图标 sprite：一次定义，全站 <use> 复用。替换原先的 emoji 字符。 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-ok" viewBox="0 0 16 16"><polyline points="3,8.5 6.2,11.7 13,4.5"/></symbol>
+    <symbol id="i-fail" viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></symbol>
+    <symbol id="i-skip" viewBox="0 0 16 16"><polyline points="4,3.5 9.5,8 4,12.5"/><line x1="12" y1="3.5" x2="12" y2="12.5"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.6 13.3H1.4Z"/><line x1="8" y1="6.4" x2="8" y2="9.6"/><circle cx="8" cy="11.4" r=".55" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M4.5 3.2 12.6 8l-8.1 4.8Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><line x1="10.2" y1="10.2" x2="13.6" y2="13.6"/></symbol>
+    <symbol id="i-tool" viewBox="0 0 16 16"><path d="M10.4 2.6a3.2 3.2 0 0 0-4.3 4.1L2.4 10.4a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-4.3l-1.7 1.7-1.6-.4-.4-1.6Z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 16 16"><circle cx="8" cy="5.4" r="2.7"/><path d="M2.9 13.6a5.1 5.1 0 0 1 10.2 0"/></symbol>
+    <symbol id="i-bot" viewBox="0 0 16 16"><rect x="2.8" y="5" width="10.4" height="8" rx="2.2"/><line x1="8" y1="2.2" x2="8" y2="5"/><circle cx="6" cy="8.6" r=".7" fill="currentColor" stroke="none"/><circle cx="10" cy="8.6" r=".7" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-back" viewBox="0 0 16 16"><polyline points="9.5,3.5 5,8 9.5,12.5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 16 16"><polyline points="5.2,6.6 8,3.8 10.8,6.6"/><polyline points="5.2,9.4 8,12.2 10.8,9.4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><line x1="8" y1="3.2" x2="8" y2="12.8"/><line x1="3.2" y1="8" x2="12.8" y2="8"/></symbol>
+    <symbol id="i-up" viewBox="0 0 16 16"><polyline points="4.4,9.6 8,6 11.6,9.6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><polyline points="4.4,6.4 8,10 11.6,6.4"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 16 16"><polyline points="6.2,4 10.2,8 6.2,12"/></symbol>
+    <symbol id="i-empty" viewBox="0 0 16 16"><rect x="2.6" y="3.4" width="10.8" height="9.6" rx="1.4"/><line x1="2.6" y1="6.4" x2="13.4" y2="6.4"/><line x1="5.2" y1="9" x2="9.4" y2="9"/><line x1="5.2" y1="11" x2="8" y2="11"/></symbol>
+    <symbol id="i-layout" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><line x1="2" y1="6" x2="14" y2="6"/><line x1="6" y1="6" x2="6" y2="13.5"/></symbol>
+    <symbol id="i-database" viewBox="0 0 16 16"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v4c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-4"/><path d="M2.5 7.5v4c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-4"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M13.4 9.2v-2.4l-1.7-.5-.4-.9.8-1.6-1.7-1.7-1.6.8-.9-.4L7.4.8H5l-.5 1.7-.9.4L2 2.1.3 3.8l.8 1.6-.4.9-1.7.5v2.4l1.7.5.4.9-.8 1.6L2 13.9l1.6-.8.9.4.5 1.7h2.4l.5-1.7.9-.4 1.6.8 1.7-1.7-.8-1.6.4-.9z" transform="translate(1 0) scale(.875)"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 16 16"><path d="M6.5 2.5h-3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"/><path d="M10 5l3 3-3 3M13 8H6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="2.5" y="7" width="11" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><circle cx="8" cy="10.5" r=".7" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 16 16"><polyline points="1.5,8.5 4.2,8.5 6,4 9,12 11,7 14.5,7"/></symbol>
+    <symbol id="i-history" viewBox="0 0 16 16"><path d="M2.2 5.2A6 6 0 1 1 2 9"/><polyline points="1.5,2.5 2.2,5.2 5,4.5"/><polyline points="8,4.5 8,8 10.5,9.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.5 13 3.4v3.8c0 3.2-2 5.8-5 7.3-3-1.5-5-4.1-5-7.3V3.4z"/><line x1="8" y1="5" x2="8" y2="8.5"/><circle cx="8" cy="11" r=".55" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-list" viewBox="0 0 16 16"><polyline points="1.8,4 3,5.2 5,3"/><line x1="7" y1="4" x2="14" y2="4"/><polyline points="1.8,8 3,9.2 5,7"/><line x1="7" y1="8" x2="14" y2="8"/><polyline points="1.8,12 3,13.2 5,11"/><line x1="7" y1="12" x2="14" y2="12"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="4.5" r=".6" fill="currentColor" stroke="none"/></symbol>
+    <!-- 品牌 logo：AND 逻辑门。两路输入（多环节评估）全真才输出真（绿色输出线）＝质量门禁。
+         颜色写死在 presentation attribute：logo 不跟随 currentColor，蓝/绿语义固定。 -->
+    <symbol id="i-logo" viewBox="0 0 48 48"><path d="M12 10h12a14 14 0 0 1 0 28H12z" fill="#2456e6" stroke="none"/><path d="M4 17h8M4 31h8" fill="none" stroke="#2456e6" stroke-width="4" stroke-linecap="round"/><path d="M38 24h6" fill="none" stroke="#15803d" stroke-width="4" stroke-linecap="round"/><circle cx="33" cy="24" r="3" fill="#fff" stroke="none"/></symbol>
+  </defs>
+</svg>
+
+<section id="authGate" class="auth-gate" aria-labelledby="authTitle">
+  <div class="auth-card">
+    <div class="auth-brand"><svg class="mark" aria-hidden="true"><use href="#i-logo"/></svg><span>Agent<b>Gate</b></span></div>
+    <h1 id="authTitle">登录 AgentGate</h1>
+    <p>登录后管理评估方案、运行记录和质量报告。</p>
+    <button id="authLoginBtn" class="btn auth-sso"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg>安全登录</button>
+    <div class="auth-note"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg>
+      <span>使用组织账户安全登录。身份验证由 Amazon Cognito 提供。</span></div>
+  </div>
+</section>
+
+<div class="shell">
+<aside class="side">
+  <div class="brand"><svg class="mark" aria-hidden="true"><use href="#i-logo"/></svg>Agent<b>Gate</b> <span class="sub">Agent 质量门禁</span></div>
+  <nav id="nav">
+    <button data-view="agents"><svg class="ic" aria-hidden="true"><use href="#i-bot"/></svg>Agent</button>
+    <button data-view="plans" class="on"><svg class="ic" aria-hidden="true"><use href="#i-layout"/></svg>工作台</button>
+    <button data-view="resources"><svg class="ic" aria-hidden="true"><use href="#i-database"/></svg>资源库</button>
+    <button data-view="settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>设置</button>
+  </nav>
+  <div class="sidefoot">
+    <span class="account-avatar">AG</span>
+    <span class="account-meta"><span class="account-label">当前账户</span><span id="who"></span></span>
+    <button id="loginBtn" class="btn mini hidden">登录</button>
+    <button id="logoutBtn" class="btn ghost mini hidden" aria-label="退出登录" data-tip="退出登录">
+      <svg class="ic" aria-hidden="true"><use href="#i-logout"/></svg></button>
+  </div>
+</aside>
+
+<main id="main">
+  <!-- ============ 评估台（首屏：方案总表 + 最近 run） ============ -->
+  <section id="view-plans" class="view on">
+    <h2 class="viewtitle">工作台
+      <span class="sub">创建、运行和管理可重复执行的评估方案</span></h2>
+    <div id="planKpis" class="kpis"></div>
+    <div class="panel">
+      <div class="section-head">
+        <h3>评估方案 <span id="plansStatus" class="statusline" style="font-weight:400"></span></h3>
+        <div class="toolbar">
+          <select id="planAgentFilter" class="mini-sel" aria-label="按 Agent 筛选"><option value="">全部 Agent</option></select>
+          <label class="search-field">
+            <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+            <input type="text" id="planSearch" placeholder="搜索方案或 Agent" aria-label="搜索方案或 Agent">
+            <button id="planSearchClear" class="search-clear hidden" type="button" aria-label="清除搜索">
+              <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+          </label>
+          <button id="newPlanBtn" class="btn mini"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>新建方案</button>
+        </div>
+      </div>
+      <div id="planTable"></div>
+    </div>
+    <div id="cslot-plans"></div>
+    <div class="panel">
+      <h3>最近运行 <span class="h3sub">跨方案 · 按时间倒序</span></h3>
+      <div id="recentRuns" class="muted">加载中…</div>
+    </div>
+  </section>
+
+  <!-- ============ 方案详情（两个视角的汇聚点：定义/趋势/run/报告） ============ -->
+  <section id="view-plan" class="view">
+    <h2 class="viewtitle"><a href="#" id="backPlans" class="back">← 工作台</a>
+      <span id="planTitle"></span><span class="sub" id="planSub"></span></h2>
+    <div id="planKpis2" class="kpis hidden" style="margin-bottom:var(--sp-4)"></div>
+
+    <div class="plan-top">
+      <div class="panel">
+        <div id="planHead" class="planhead"></div>
+        <div id="planEditor" class="hidden" style="margin-top:12px"></div>
+      </div>
+
+      <div class="panel" id="planTrendPanel">
+        <h3>趋势 <span class="h3sub">历次运行的分数变化</span></h3>
+        <div id="planTrend" class="muted"></div>
+      </div>
+    </div>
+
+    <div id="cslot-plan"></div>
+
+    <!-- 综合报告：跨运行视角（judge 生成），每次运行出一版，历史版本可切换 -->
+    <div class="panel" id="synthesisPanel">
+      <h3>综合报告 <span class="h3sub">综合多次运行的分析结论</span>
+        <select id="synthSel" class="mini-sel hidden" aria-label="综合报告版本"></select></h3>
+      <div id="synthesisBody" class="muted"></div>
+    </div>
+
+    <div class="panel" id="runHistoryPanel">
+      <!-- 副标题 = 运行计数（JS 填充）+ 一次性时区声明：同页三种时间格式统一后，UTC 只在这里说一次 -->
+      <h3>运行历史 <span class="h3sub" id="runHistorySub"></span>
+        <span class="h3sub" id="runHistoryTz">时间为 UTC</span></h3>
+      <div id="runHistory" class="muted">加载中…</div>
+    </div>
+
+    <div class="panel hidden" id="reportPanel">
+      <h3 id="reportTitle">评估报告</h3>
+      <div id="reportOverview"></div>
+      <div id="reportBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ Agent 目录（agent 视角入口） ============ -->
+  <section id="view-agents" class="view">
+    <h2 class="viewtitle">Agent
+      <span class="sub">评估对象目录 · 每个评估方案绑定一个 Agent · 来源标注 agentcore / langfuse</span></h2>
+    <div class="controls" style="margin-bottom:10px">
+      <button id="rescanBtn" class="btn ghost mini">重新扫描 AgentCore</button>
+      <span id="agentsStatus" class="statusline"></span>
+    </div>
+    <div class="panel">
+      <div id="agentTable"></div>
+    </div>
+  </section>
+
+  <!-- ============ Agent 详情（agent 视角：挂载的方案 + run 聚合） ============ -->
+  <section id="view-agentDetail" class="view">
+    <h2 class="viewtitle"><a href="#" id="backAgents" class="back">← Agent</a>
+      <span id="agentTitle"></span><span class="sub" id="agentSub"></span></h2>
+
+    <div class="panel">
+      <h3>评估方案 <span class="h3sub">仅显示绑定此 Agent 的方案</span>
+        <button id="agentNewPlanBtn" class="btn mini">+ 新建方案</button></h3>
+      <div id="agentPlanList" class="muted">加载中…</div>
+    </div>
+
+    <div id="cslot-agent"></div>
+
+    <!-- 调用配置：属于该 Agent 自己的配置（原在设置页），默认折叠 —— 多数 Agent 用默认值即可 -->
+    <details class="panel foldpanel" id="invCfgBlock">
+      <summary class="foldsum">调用配置
+        <span class="h3sub">回归 / 红队测试如何调用这个 Agent · 多数情况用默认值即可</span></summary>
+
+      <div class="faint" style="margin-bottom:var(--sp-3)">
+        回归测试与红队测试会真实调用该 Agent：<b>调用模板</b>决定发出的请求长什么样，
+        <b>输出位置</b>决定从返回里取哪一段当作 Agent 的回答。线上评估读取历史会话，不涉及这两项。
+      </div>
+
+      <!-- 1) 请求格式：预置单选，不熟 JSON 的用户点一下即可 -->
+      <div class="fieldlabel">请求格式
+        <span class="faint">选一个常见格式，或选「自定义」自己写</span></div>
+      <div class="chips" id="invPresetChips"></div>
+      <div class="controls">
+        <input type="text" id="cfgTemplate" placeholder='调用模板，如 {"prompt": "{input}"}'
+          aria-label="调用模板" style="flex:1;min-width:280px;font-family:var(--mono)">
+      </div>
+      <div class="faint" style="margin-bottom:var(--sp-4)">
+        占位符 <code>{input}</code> 会在运行时替换为用例输入（回归集里的问题、红队攻击话术）。
+        模板本身必须是合法 JSON。
+      </div>
+
+      <!-- 2) 测试连通：一次真实调用，拿回真实响应结构 -->
+      <div class="fieldlabel">测试连通
+        <span class="faint">用上面这份草稿发一次真实调用，不必先保存</span></div>
+      <div class="controls">
+        <button id="invProbeBtn" class="btn mini">测试连通</button>
+        <input type="text" id="invSampleInput" placeholder="测试输入（可选，留空用一句默认测试问句）"
+          aria-label="测试输入" style="flex:1;min-width:220px">
+        <span id="invProbeStatus" class="statusline"></span>
+      </div>
+      <div class="faint" style="margin-bottom:var(--sp-4)">
+        将向该 Agent 发<b>一次真实调用</b>（产生一次真实调用费用），最长等待 45 秒；不写入任何评估记录。
+      </div>
+
+      <!-- 3) 输出位置：探测回来后可点选；也可手填 -->
+      <div class="fieldlabel">输出位置
+        <span class="faint">从返回的 JSON 里取回答文本的路径；返回本身就是纯文本时留空</span></div>
+      <div class="controls">
+        <input type="text" id="cfgRespPath" placeholder="留空 = 整段返回即输出；JSON 返回填路径，如 result.text"
+          aria-label="输出位置（响应路径）" style="flex:1;min-width:280px;font-family:var(--mono)">
+        <button id="cfgSaveBtn" class="btn mini">保存配置</button>
+        <span id="cfgStatus" class="statusline"></span>
+      </div>
+      <div id="invProbeResult" class="hidden"></div>
+    </details>
+
+    <div class="panel">
+      <h3>运行记录 <span class="h3sub">跨方案聚合 · 报告见方案详情页</span></h3>
+      <div id="agentRuns" class="muted">加载中…</div>
+    </div>
+  </section>
+
+  <!-- ============ 资源库（场景化分区：线上评估 / 回归测试 / 红队测试 + 评估器管理） ============ -->
+  <section id="view-resources" class="view">
+    <h2 class="viewtitle">资源库<span class="sub">管理评估器、数据集和红队测试用例</span></h2>
+    <div class="controls" style="margin-bottom:10px"><span id="resStats" class="statusline"></span></div>
+
+    <div class="res-grid">
+
+      <!-- 场景：线上评估（评估器管理区的 observe 过滤只读视图） -->
+      <div class="panel" id="resObservePanel">
+        <div class="scene-title"><span class="scene-icon"><svg class="ic" aria-hidden="true"><use href="#i-activity"/></svg></span>
+          <h3>线上评估 <span class="scene-desc">使用线上真实会话进行评估，无需准备用例。</span></h3></div>
+        <div class="resource-label">可用评估器</div>
+        <div class="chips" id="obsEvalChips" style="margin-top:6px"><span class="muted">加载中…</span></div>
+        <div class="controls" style="margin-top:8px">
+          <a href="#" class="qlink res-go-mgr">管理评估器 →</a>
+        </div>
+      </div>
+
+      <!-- 场景：回归测试（数据集全部控件 + dataset 过滤只读视图） -->
+      <div class="panel" id="resDatasetPanel">
+        <div class="scene-title"><span class="scene-icon"><svg class="ic" aria-hidden="true"><use href="#i-history"/></svg></span>
+          <h3>回归测试 <span class="scene-desc">使用固定用例集重复运行，比较不同版本结果。</span></h3></div>
+        <div class="controls">
+          <label class="inline">数据集
+            <select id="dsSelect" style="min-width:200px"><option value="">选择数据集…</option></select></label>
+          <button id="dsNewBtn" class="btn ghost mini">+ 新建</button>
+          <button id="dsEditBtn" class="btn ghost mini">编辑</button>
+          <button id="dsDeleteBtn" class="btn danger mini">删除</button>
+          <button id="dsGenBtn" class="btn ghost mini">AI 生成用例</button>
+          <span id="dsStatus" class="statusline"></span>
+        </div>
+        <div id="dsGenForm" class="hidden" style="margin-top:10px">
+          <div class="controls">
+            <select id="dsGenAgent" aria-label="生成用例的目标 Agent"><option value="">（可选）目标 Agent，使用其提示词增强生成…</option></select>
+            <label class="inline"><input type="number" id="dsGenCount" value="10" min="1" max="50" style="width:80px" aria-label="生成条数"> 条</label>
+            <label class="inline"><input type="checkbox" id="dsGenExtend"> 追加到当前数据集</label>
+          </div>
+          <textarea id="dsGenContext" rows="3" placeholder="业务背景 / 需求描述 / 粘贴文档内容…" aria-label="生成用例的业务背景"></textarea>
+          <div class="controls">
+            <input type="file" id="dsGenFiles" multiple accept=".txt,.md,.json,.csv,.pdf" aria-label="参考材料文件">
+            <span id="dsGenFileList" class="faint"></span>
+            <button id="dsGenGoBtn" class="btn mini">生成</button>
+            <button id="dsGenCancelBtn" class="btn ghost mini">收起</button>
+            <span id="dsGenStatus" class="statusline"></span>
+          </div>
+        </div>
+        <div id="dsEditor" class="hidden" style="margin-top:10px">
+          <div class="controls">
+            <input type="text" id="dsName" placeholder="数据集名称" aria-label="数据集名称">
+            <div class="chips" id="dsModeChips" aria-label="编辑模式">
+              <label><input type="radio" name="dsMode" id="dsModeForm" value="form" checked> 表单编辑</label>
+              <label><input type="radio" name="dsMode" id="dsModeJson" value="json"> JSON 编辑</label>
+            </div>
+            <button id="tplSingleBtn" class="btn ghost mini hidden">+ 单轮模板</button>
+            <button id="tplMultiBtn" class="btn ghost mini hidden">+ 多轮模板</button>
+            <button id="tplImageBtn" class="btn ghost mini hidden">+ 图片模板</button>
+            <input type="file" id="dsCaseImages" multiple accept=".jpg,.jpeg,.png,.gif,.webp" class="hidden">
+            <button id="dsImgBtn" class="btn ghost mini">上传用例图片</button>
+            <span id="dsImageStatus" class="faint"></span>
+          </div>
+          <div id="dsForm"></div>
+          <textarea id="dsJson" rows="14" spellcheck="false" aria-label="用例 JSON" class="hidden"></textarea>
+          <div class="controls">
+            <button id="dsSaveBtn" class="btn mini">保存数据集</button>
+            <button id="dsCancelBtn" class="btn ghost mini">取消</button>
+            <span class="faint">用例字段：name / input / expected_output / expected_tools / task_description(多轮) / image_key(图片)</span>
+          </div>
+        </div>
+        <div id="dsPreview" class="muted" style="margin-top:8px"></div>
+        <div class="faint" style="margin-top:10px">可用评估器（回归适用）</div>
+        <div class="chips" id="dsEvalChips" style="margin-top:6px"><span class="muted">加载中…</span></div>
+      </div>
+
+      <!-- 场景：红队测试 -->
+      <div class="panel" id="resRedteamPanel">
+        <div class="scene-title"><span class="scene-icon"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></span>
+          <h3>红队测试 <span class="scene-desc">使用对抗性用例检测安全和合规风险。</span></h3></div>
+        <div class="controls">
+          <label class="inline">目标 Agent
+            <select id="rtGenAgent" style="min-width:180px"><option value="">选择目标 Agent…</option></select></label>
+          <label class="inline"><input type="number" id="rtNumCases" value="2" min="1" max="5" style="width:70px" aria-label="每类用例数"> 条/类</label>
+        </div>
+        <div class="faint" style="margin-top:6px">风险类别</div>
+        <div class="chips" id="rtRiskChips" style="margin-top:6px"><span class="muted">加载中…</span></div>
+        <div class="controls" style="margin-top:8px">
+          <button id="rtGenBtn" class="btn ghost mini">AI 生成攻击用例</button>
+          <span id="rtGenStatus" class="statusline"></span>
+        </div>
+        <div id="rtGenOut" class="hidden" style="margin-top:10px">
+          <textarea id="rtCasesJson" rows="10" spellcheck="false" aria-label="红队用例 JSON"></textarea>
+          <div class="controls">
+            <input type="text" id="rtSaveName" placeholder="保存为用例集名称（如 rt-订票助手）" aria-label="用例集名称">
+            <button id="rtSaveBtn" class="btn mini">保存为用例集</button>
+          </div>
+        </div>
+        <div class="faint" style="margin-top:8px">用例集以数据集形式存储，红队环节按名称引用。</div>
+      </div>
+
+      <!-- 评估器管理（唯一数据源：场景区的评估器列表是这里按适用范围过滤的只读视图） -->
+      <div class="panel" id="evalMgrPanel">
+        <div class="scene-title"><span class="scene-icon"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span>
+          <h3>评估器管理 <span class="scene-desc">管理内置和自定义评估器及其适用范围。</span></h3></div>
+        <div class="faint">内置（<span id="builtinCount">0</span>）</div>
+        <div class="chips" id="builtinChips" style="margin-top:6px"><span class="muted">加载中…</span></div>
+        <div class="faint" style="margin-top:10px">自定义（<span id="customCount">0</span>）</div>
+        <div class="chips" id="customChips" style="margin-top:6px"><span class="muted">暂无</span></div>
+        <div class="controls" style="margin-top:8px">
+          <button id="newEvalBtn" class="btn ghost mini">+ 新建评估器</button>
+        </div>
+        <div id="newEvalForm" class="hidden" style="margin-top:8px">
+          <div class="controls">
+            <select id="evalTemplate" aria-label="评估器模板">
+              <option value="">从模板开始（可选）…</option>
+              <option value="decomposition">任务分解合理性（多智能体/多步骤）</option>
+              <option value="handoff">信息传递完整性（多智能体/多步骤）</option>
+            </select>
+            <input type="text" id="newEvalName" placeholder="名称（如 airline-compliance）" aria-label="评估器名称">
+            <label class="inline">适用环节
+              <select id="newEvalScope">
+                <option value="all">两者皆可</option>
+                <option value="observe">仅线上评估</option>
+                <option value="dataset">仅回归测试</option>
+              </select></label>
+          </div>
+          <textarea id="newEvalRubric" rows="4" placeholder="评分标准 rubric…" aria-label="评分标准"></textarea>
+          <div class="controls">
+            <button id="saveEvalBtn" class="btn mini">保存</button>
+            <button id="cancelEvalBtn" class="btn ghost mini">取消</button>
+            <span id="evalFormStatus" class="statusline"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section id="view-settings" class="view">
+    <h2 class="viewtitle">设置<span class="sub">配置评估服务、数据源和成本参数</span></h2>
+
+    <div class="settings-layout">
+      <aside class="settings-nav" aria-label="设置页内导航">
+        <a href="#" data-target="setting-model" class="is-active">评估模型</a>
+        <a href="#" data-target="setting-source">数据源</a>
+        <a href="#" data-target="setting-pricing">模型单价</a>
+        <a href="#" data-target="setting-cache">结果缓存</a>
+      </aside>
+      <div class="settings-content">
+    <div class="settings-section" id="setting-model">
+      <h3>评估模型</h3>
+      <p class="setting-intro">评分、诊断、解析和生成统一使用该模型。</p>
+      <div class="controls">
+        <label class="inline">平台
+          <select id="jmProvider">
+            <option value="bedrock">Amazon Bedrock</option>
+            <option value="openai">OpenAI 兼容端点</option>
+          </select></label>
+        <label class="inline">模型 <input type="text" id="jmModel" style="width:280px"
+          placeholder="如 global.anthropic.claude-sonnet-5"></label>
+      </div>
+      <div class="controls hidden" id="jmOpenaiRow">
+        <input type="text" id="jmBaseUrl" placeholder="base_url（如 https://api.example.com/v1）" style="width:300px">
+        <input type="text" id="jmSecret" placeholder="Secret 名（eval-anything/ 开头）" style="width:260px">
+      </div>
+      <div class="controls">
+        <button id="jmSaveBtn" class="btn mini">验证并保存</button>
+        <span id="jmStatus" class="statusline"></span>
+      </div>
+      <div class="info-box">
+        <svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>
+        <span>保存时会发送一次探测请求。API Key 仅存于 Secrets Manager，平台不保存明文；第三方模型缺少单价时按默认 Judge 单价估算。</span>
+      </div>
+    </div>
+
+    <div class="settings-section" id="setting-source">
+      <h3>Langfuse 数据源</h3>
+      <p class="setting-intro">用于对非 AgentCore Agent 进行线上评估，接入后会显示在 Agent 目录。</p>
+      <div class="controls">
+        <input type="text" id="lfName" placeholder="Agent 显示名">
+        <input type="text" id="lfHost" placeholder="https://langfuse.example.com">
+        <input type="text" id="lfSecret" placeholder="Secrets Manager 名（须以 eval-anything/ 开头）">
+        <input type="text" id="lfDesc" placeholder="描述（可选）" style="width:160px">
+        <button id="lfAddBtn" class="btn mini">校验并接入</button>
+      </div>
+      <div id="lfStatus" class="statusline"></div>
+      <div class="faint" style="margin-top:6px">
+        密钥仅存于 Secrets Manager（{"public_key":"pk-…","secret_key":"sk-…"}，us-west-2），平台不保存明文。
+        Langfuse 源仅支持线上评估。评估服务运行于云端环境，localhost 地址不可达。
+      </div>
+    </div>
+
+    <div class="settings-section" id="setting-pricing">
+      <h3>模型单价</h3>
+      <p class="setting-intro">用于成本估算，手动配置优先于自动同步。</p>
+      <div class="controls">
+        <button id="syncPricesBtn" class="btn ghost mini">从 Pricing API 同步</button>
+        <span id="priceStatus" class="statusline"></span>
+      </div>
+      <div class="tscroll narrow"><table id="priceTable"></table></div>
+      <div class="controls" style="margin-top:8px">
+        <input type="text" id="priceModel" placeholder="模型 key（如 anthropic.claude-sonnet-5）" style="width:280px">
+        <input type="number" id="priceIn" placeholder="$/1K 输入" step="0.0001" style="width:110px">
+        <input type="number" id="priceOut" placeholder="$/1K 输出" step="0.0001" style="width:110px">
+        <button id="savePriceBtn" class="btn mini">保存单价</button>
+      </div>
+    </div>
+
+    <div class="settings-section" id="setting-cache">
+      <h3>评估结果缓存</h3>
+      <p class="setting-intro">查看缓存状态、作用域并管理已保存的评估结果。</p>
+      <div class="controls">
+        <button id="cacheMgrBtn" class="btn ghost mini">查看缓存详情</button>
+        <span id="cacheStatus" class="statusline"></span>
+      </div>
+      <div id="cachePanel"></div>
+    </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+</div><!-- /.shell -->
+
+<!-- 运行控制台：浮动面板，挂载到按下[运行]的页面（cslot-*），跑完自动切到方案详情报告 -->
+<div class="panel hidden" id="runConsolePanel">
+  <h3><span id="runConsoleTitle">运行中</span> <span id="runConsoleStatus" class="h3sub"></span>
+    <span class="hspace" style="flex:1"></span>
+    <button id="runConsoleClose" class="btn ghost mini">✕ 收起</button></h3>
+  <div class="runconsole">
+    <div class="stagerail" id="stageRail"></div>
+    <pre class="runlog" id="runLog"></pre>
+  </div>
+  <div class="live-cards" id="liveCards"></div>
+</div>
+
+<!-- 会话抽屉（溯源） -->
+<div id="drawerMask" class="hidden"></div>
+<div id="drawer" class="hidden" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" tabindex="-1">
+  <button id="drawerClose" class="btn ghost mini">✕ 关闭</button>
+  <h4 id="drawerTitle"></h4>
+  <div id="drawerResults"></div>
+  <details id="drawerSysPrompt" class="hidden"><summary>系统提示词</summary><pre></pre></details>
+  <div id="drawerDiag"></div>
+  <div id="drawerTimeline"></div>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

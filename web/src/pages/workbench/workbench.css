@@ -1,0 +1,88 @@
+/* 评估计划页样式：只做列宽/局部排布，组件形态全部来自 ui.css（B 案纪律） */
+
+/* 计划名：button 语义但长得像 .cell-main 链接 */
+.wb-plan-name {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--cjk);
+  text-align: left;
+  cursor: pointer;
+}
+.wb-plan-name:hover { color: var(--accent-fg); text-decoration: underline; }
+.wb-plan-name:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  box-shadow: none;
+  border-radius: 2px;
+}
+
+/* 上次结果：状态点 + 文案 + 分数 */
+.wb-lastrun { display: inline-flex; align-items: center; gap: 6px; }
+.wb-lastrun-label { font-size: var(--fs-caption); color: var(--muted); }
+.wb-lastrun .num { font-size: var(--fs-caption); }
+
+/* agents.css 只定义了 completed/error/skipped，这里补 running 与 warn
+   （部分失败，UI-025）——都是既有语义变量，不新造颜色令牌 */
+.status-dot.running { background: var(--accent); }
+.status-dot.warn { background: var(--warn-dot); }
+
+/* 定时列：mono 小字 */
+.wb-schedule {
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+
+/* 超预算徽章跟在金额后 */
+.wb-over-budget { margin-left: 6px; }
+
+/* 操作列 */
+.wb-col-action { width: 64px; text-align: right; }
+td.wb-col-action { text-align: right; }
+
+/* 时间列：mono 小字 */
+.wb-time {
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* 错误行 */
+.wb-error { color: var(--bad); font-size: var(--fs-caption); }
+
+/* toast 样式已随机制搬到 components/toast.css（全局件，四个页面族共用） */
+
+/* ---------- 排程看板（批 plans-board） ---------- */
+
+/* 表头上一行的告警条：中性态走 sunken 底，告警态走 bad 语义色；只用既有令牌 */
+.wb-board-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px var(--pad-card-x);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  background: var(--bg-sunken);
+}
+.wb-board-bar[data-tone="bad"] {
+  color: var(--bad);
+  background: var(--bad-bg);
+}
+.wb-board-bar .spacer { flex: 1; }
+.wb-board-bar b.num { font-weight: 600; color: inherit; }
+.wb-board-bar-spend { white-space: nowrap; }
+
+/* Agent 深链：与 .lat 同字体，颜色跟 text，hover 才提示可点 */
+.wb-agent-link { color: var(--text); text-decoration: none; }
+.wb-agent-link:hover { color: var(--accent-fg); text-decoration: underline; }
+
+/* 下次运行列：mono 小字，与定时列同级 */
+.wb-next {
+  font-size: var(--fs-micro);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* hero meta 里的计划名：比 cron 人话重一档 */
+.kpi-hero-meta .wb-kpi-plan { color: var(--text); font-weight: 600; }

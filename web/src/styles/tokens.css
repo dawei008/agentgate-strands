@@ -1,0 +1,314 @@
+/* ============================================================================
+   AgentGate 设计令牌 · v2「实心分层观测台」（ADR-0016 设计骨架 v2，2026-09-03）
+   ---------------------------------------------------------------------------
+   从 v1（web/src/styles/tokens.css @ 06b8041，v3-C 玻璃拟态）出发改，不是重写：
+   · 身份不变：恒暗、绿信号色、Fira Sans / Fira Code、**所有 hex / rgba 色值一个不改**。
+   · 骨架换 Raycast 一路（借规则不借皮）：实心分层表面 + 发丝线边框阶梯 +
+     数字字号阶梯放大 + 圆角/内边距节奏放大 + 限量光效；玻璃只留 hero 与浮层。
+   · 每处改动都带「v2: 原值 → 新值 · 理由」注释，来源只有两种：v1 令牌名，或
+     raycast DESIGN.md 的章节号（§）/ raycast tokens.css 的令牌名。
+   注意：本文件注释内严禁出现星号紧跟斜杠的写法（会提前闭合注释、整段 :root 失效）。
+
+   ===================== 五条消费纪律（v2 修订，改样式前必读）=====================
+
+   纪律 1 · 玻璃只上 hero 与浮层，卡片实心。
+     全站唯一使用 backdrop-filter 的地方 = hero（.kpi-strip）与浮层（.drawer-panel /
+     .auth-card）。卡片（.card 族）改实心 --card-bg（= --panel）+ 1px --card-border
+     发丝线，零 blur、零 sheen。层次靠表面阶梯 --surface-0..3 与发丝线阶梯
+     --hairline-soft / --hairline / --hairline-border / --hairline-strong 表达。
+
+   纪律 2 · 表格零玻璃、chip/badge 实心底。（不变）
+     thead 底 = --tint-1；tbody 行 hover = --tint-2；chip / badge / kbd / 类型标基底 =
+     实心 --bg2(#272F42)。表格密度令牌（--h-row / --pad-cell-x / --fs-sm）v2 一律不动。
+
+   纪律 3 · 侧栏 / 搜索框 / 按钮是 chrome，实心不玻璃。（不变）
+
+   纪律 4 · 焦点环统一 outline 型：solid 2px #4ADE80 offset 2px。（不变）
+
+   纪律 5 · 数据走 mono，数字阶梯三档 48 / 24 / 18；viz 线宽 ≥ 1.5px、填充可见。
+     数字/时间/ID/分数/金额一律 var(--mono) + tabular-nums。趋势线 --viz-stroke 2px、
+     下限 --viz-stroke-min 1.5px、面积 --viz-1-fill .18 必须画出（这是比 Raycast /
+     Vercel 更实的那一档）。
+   ========================================================================= */
+
+/* ---- 本地字体：Fira Sans（正文）+ Fira Code（数据/代码），latin 子集，
+        woff2 从原型 fonts/ 拷入 web/public/fonts/，CJK 由系统栈兜底（v2 不变） ---- */
+@font-face { font-family: 'Fira Sans'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/firasans-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Fira Sans'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('/fonts/firasans-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Fira Sans'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('/fonts/firasans-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Fira Code'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/firacode-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+:root {
+  /* ======================= 表面 / 画布（色值不变） ======================= */
+  --bg:      #0F172A;   /* page canvas（slate-900，光斑与网格的底） */
+  --bg2:     #272F42;   /* muted 面：实心 chip / 表头基 / 按钮底 / kbd —— 不透明 */
+  --panel:   #1B2336;   /* v2: 角色变更 —— 从「玻璃基色」变为「实心卡片面」（值不变） */
+
+  --bg-sunken: #272F42; /* 与 --bg2 同值，语义别名 */
+  --bg-hover:  rgba(255, 255, 255, .06);  /* 行 hover = 纯 tint（纪律 2） */
+  --bg-active: #31394D; /* 行 selected / 按钮 hover-pressed */
+  --bg-sidebar:#131A2B; /* 左侧栏：实心 chrome（纪律 3） */
+
+  /* v2 新增：实心分层表面阶梯（纯别名，零新 hex）。
+     理由：参照 raycast DESIGN.md §6「Level 0 (Void) → Level 1 → …」—— 层次靠表面色阶
+     而不靠透明度。0 = 画布，1 = 卡片，2 = 卡内凹陷面（chip/输入/kbd），3 = hover/pressed。 */
+  --surface-0: var(--bg);
+  --surface-1: var(--panel);
+  --surface-2: var(--bg2);
+  --surface-3: var(--bg-active);
+
+  /* ======================= 边框（实色三级，值不变） ======================= */
+  --line:  #64748B;     /* 控件 / 实心面外框 */
+  --line2: #7D8CA3;     /* hover 描边（= --line-strong，保留旧名兼容） */
+
+  --line-subtle: #475569;              /* 格内 hairline 的实色档（凹陷实心面内用） */
+  --line-strong: #7D8CA3;              /* 表头下沿 / hover 描边 / 目标刻度线 */
+  --line-inverse:#E2E8F0;              /* 亮色元素描边 */
+
+  /* v2 新增：发丝线阶梯（把 v1 ui.css / base.css 里散落的 rgba 白线收成 5 档）。
+     理由：参照 raycast DESIGN.md §7「rgba(255,255,255,0.06) borders — barely visible,
+     structurally essential」与 §6 shadow philosophy「outer rings for containment」：
+     实心卡的外框只靠一条低 alpha 白线，层级由 alpha 阶梯给出。值全部取自 v1 现有写法。 */
+  --hairline-soft:   rgba(255, 255, 255, .045); /* 表格行分隔（v1 ui.css .u-table tbody td 的 .045） */
+  /* --hairline .07 见下方「非玻璃层次手段」段，卡内分隔线，值不变 */
+  --hairline-border: rgba(255, 255, 255, .08);  /* 卡片外框（= v1 --glass-border 的 .08，角色从玻璃框变实心框） */
+  --hairline-strong: rgba(255, 255, 255, .12);  /* 控件描边：次按钮 / 输入面（v1 ui.css .btn.ghost 的 .12；
+                                                    v2 把 .u-input 的 .10 并入此档，理由：控件描边统一一档） */
+  --hairline-hover:  rgba(255, 255, 255, .20);  /* 控件 hover 描边（v1 ui.css .btn.ghost:hover 的 .20） */
+
+  /* ======================= 文字四档（值不变；对比度改按实心 --panel 实算） ======================= */
+  --text:  #F8FAFC;     /* 主文字（vs --panel 14.98 / vs --bg2 12.77） */
+  --muted: #94A3B8;     /* 次要（vs --panel 6.11 / vs --bg2 5.21） */
+  --faint: #7D8CA3;     /* 最弱灰（vs --panel 4.59 —— 卡改实心后这是最紧的一档；勿放 --bg2 上 3.91） */
+
+  --faint-on-sunken: #8B99B0;  /* 凹陷实心面（--bg2/--bg-active）上的辅助文字，vs --bg2 4.63 */
+  --text-on-accent:  #0F172A;  /* 绿主按钮上用深字（vs --accent 7.83） */
+
+  /* ======================= accent（绿系，值不变） ======================= */
+  --accent:     #22C55E;
+  --accent-dim: #2FD46C;
+  --accent-bg:  rgba(34, 197, 94, .14);
+
+  --accent-fg:     #4ADE80;               /* vs --panel 8.99 */
+  --accent-active: #4ADE80;
+  --accent-line:   rgba(34, 197, 94, .34);
+
+  /* ======================= 语义色（值不变） ======================= */
+  --good: #4ADE80;   /* vs --panel 8.99 */
+  --warn: #F59E0B;   /* vs --panel 7.30（表内小字警示提亮用 #FBBF24，vs --panel 9.39） */
+  --bad:  #F87171;   /* vs --panel 5.66 */
+  --info: #93C5FD;   /* vs --panel 8.69 */
+
+  --good-bg: rgba(34, 197, 94, .13);  --good-line: rgba(34, 197, 94, .30);
+  --warn-bg: rgba(251, 191, 36, .12); --warn-line: rgba(251, 191, 36, .30);
+  --bad-bg:  rgba(239, 68, 68, .13);  --bad-line:  rgba(239, 68, 68, .32);
+
+  --good-dot: #22C55E;
+  --warn-dot: #F59E0B;
+  --bad-dot:  #EF4444;
+  --info-bg:  rgba(96, 165, 250, .13); --info-line: rgba(96, 165, 250, .32);
+  --neutral:      #94A3B8;
+  --neutral-dot:  #7D8CA3;
+  --neutral-bg:   #272F42;                    /* 中性徽章 = 实心 --bg2（纪律 2） */
+  --neutral-line: rgba(255, 255, 255, .09);
+
+  /* ============ 对比两栏身份色（纯别名，不变） ============ */
+  --side-a-fg:   var(--info);
+  --side-a-dot:  var(--viz-2);
+  --side-a-bg:   var(--info-bg);
+  --side-a-line: var(--info-line);
+  --side-b-fg:   var(--accent-fg);
+  --side-b-dot:  var(--accent);
+  --side-b-bg:   var(--accent-bg);
+  --side-b-line: var(--accent-line);
+
+  /* ======================= 数据可视化（绿基调，色值不变） ======================= */
+  --viz-1: #22C55E;
+  --viz-1-fill: rgba(34, 197, 94, .18);   /* v2: 值不变，但从「可选」变「必画」（纪律 5） */
+  --viz-2: #60A5FA;
+  --viz-2-fill: rgba(96, 165, 250, .14);
+  --viz-grid: rgba(255, 255, 255, .07);
+  --viz-axis: rgba(255, 255, 255, .12);
+  --viz-baseline: #FBBF24;
+
+  /* v2 新增：非状态量（会话数 / 成本走势）的中性趋势线，颜色只给状态（纯别名）。
+     理由：Agent 卡的会话 sparkline 不是达标/未达标语义，不许用绿；值取 v1 --neutral / --tint-2。 */
+  --viz-neutral:      var(--neutral);
+  --viz-neutral-fill: var(--tint-2);
+
+  /* v2 新增：趋势线几何 —— 比 Raycast / Vercel 版更实（ADR-0016：那是它们的弱点）。
+     值取 v1 TrendCard.tsx：主线 strokeWidth 2、比率线 1.5、数据点 r=4。 */
+  --viz-stroke:     2px;    /* 卡内 sparkline 与趋势主线 */
+  --viz-stroke-min: 1.5px;  /* 任何趋势线的下限（次序列 / 比率线） */
+  --viz-dot:        4px;    /* 末点 / 数据点半径 */
+
+  --kind-sim: #4DC4CF;   /* vs --panel 7.55 */
+
+  /* ======================= 玻璃配方 —— v2 只供 hero 与浮层（纪律 1） ======================= */
+  --glass-bg:     rgba(27, 35, 54, .60);   /* 值不变；消费者只剩 .kpi-strip / .auth-card */
+  --glass-border: rgba(255, 255, 255, .08);
+  --glass-line:   rgba(255, 255, 255, .08);   /* = --glass-border，原型旧名兼容 */
+  --glass-blur:   blur(16px) saturate(115%);
+  --glass-sheen:  linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, 0) 46%);
+  --glass-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 18px 40px -24px rgba(0, 0, 0, .75);
+
+  /* v2 新增：浮层底（抽屉）—— 把 v1 base.css .drawer-panel 手写的 rgba(27,35,54,.78) 令牌化。 */
+  --overlay-bg: rgba(27, 35, 54, .78);
+
+  /* v2 新增：实心卡片三件套（纯别名）。理由：参照 raycast DESIGN.md §4「Standard Card:
+     surface + 1px solid rgba(255,255,255,0.06) border, no shadow」—— 实心面 + 发丝线，不投影。 */
+  --card-bg:     var(--panel);
+  --card-border: var(--hairline-border);
+  --sh-card:     none;
+
+  /* 非玻璃层次手段：纯 tint + hairline（值不变，v2 是卡内层次的唯一手段） */
+  --tint-1: rgba(255, 255, 255, .03);   /* thead 底 / 内嵌浅一档 */
+  --tint-2: rgba(255, 255, 255, .06);   /* 行 hover / 控件 hover */
+  --hairline: rgba(255, 255, 255, .07); /* 卡内分隔线（card-head 底线 / kpi 格间线） */
+
+  /* 限量光效：只给 hero 指标 / 品牌标 / 主 CTA，禁止批发（值不变） */
+  --glow: 0 0 0 1px rgba(34, 197, 94, .35), 0 6px 20px -8px rgba(34, 197, 94, .55);
+  /* v2 新增：hero 顶缘绿线 —— 把 v1 ui.css .kpi-strip::after 的渐变令牌化，全站唯一一条。
+     理由：参照 raycast DESIGN.md §6「Decorative Depth: one glow behind featured elements」。 */
+  --glow-line: linear-gradient(90deg, rgba(34, 197, 94, 0), rgba(34, 197, 94, .85), rgba(34, 197, 94, 0));
+
+  /* ======================= 字阶 —— v2 只放大数字三档，文字档不动 ======================= */
+  --fs-display: 48px;   /* v2: 34px → 48px · hero KPI（全页唯一锚点）。参照 raycast DESIGN.md §8
+                           hero 阶梯「64px → 48px → 36px」取中档：64 是营销尺度，328px 的 hero 格
+                           放不下 6 位 mono 数。48/13 = 3.7×，v1 34/13 = 2.6× 拉不开层级。 */
+  --fs-h1:      19px;   /* 页标题（不变） */
+  --fs-h2:      15px;   /* 抽屉 / 模态标题（不变） */
+  --fs-body:    13px;   /* 正文、按钮、导航（不变） */
+  --fs-sm:    12.5px;   /* 表格单元格、表单（不变 —— 表格密度不动） */
+  --fs-caption: 12px;   /* 不变 */
+  --fs-micro:   11px;   /* 不变 */
+
+  --fs-metric:    24px;   /* v2: 22px → 24px · 次级 KPI / Agent 卡主数。参照 raycast DESIGN.md §3
+                             「Section Heading 24px」；与 48 成 2:1 整数阶梯。 */
+  --fs-metric-sm: 18px;   /* v2: 17px → 18px · 表内强调分数 / hero 分母。参照 raycast DESIGN.md §3
+                             「Body Large 18px」；34px 行高内 20px 会顶行，18 是上限。 */
+  --fs-section:   13px;   /* 区块标题（不变） */
+  --fs-nano:    10.5px;   /* 不变 */
+  /* v2 新增：卡片标题档（纯别名 = --fs-h2）。理由：实心卡失去玻璃边界后，13px 标题与正文同级
+     分不出卡头；抬到 15/600，仍低于页标题 19。 */
+  --fs-card-title: var(--fs-h2);
+
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+
+  --ls-caps:     .06em;
+  --ls-caps-cjk: .04em;
+  --ls-num:     -.01em;
+  --ls-title:   -.015em;
+  /* v2 新增：hero 数字的字距（把 v1 ui.css .kpi-hero-num 的 -.02em 令牌化；48px mono 不收字距会散） */
+  --ls-display: -.02em;
+
+  /* ======================= 行高 / 密度（表格密度不动） ======================= */
+  --lh-tight: 1.25;
+  --lh-snug:  1.4;
+  --lh-body:  1.55;
+  /* v2 新增：hero 数字行高。参照 raycast tokens.css --leading-tight 1.1（DESIGN.md §3 Display Hero 1.10）。
+     v1 .kpi-hero-num 用 1，48px 下降部会被裁。 */
+  --lh-display: 1.1;
+  --h-row:      34px;
+  --h-row-tall: 40px;
+  --h-row-head: 30px;
+
+  /* ======================= 控件高度（不变） ======================= */
+  --h-control-sm: 28px;
+  --h-control:    28px;
+  --h-control-xs: 24px;
+  --h-topbar:     48px;
+  --w-sidebar:   208px;
+  --w-content:  1392px;
+  /* v2 新增：卡头高度。v1 ui.css .card-head min-height 42px → 48px = --h-topbar，
+     理由：卡头与顶栏同高，页面纵向节律只剩一种头部高度。 */
+  --h-card-head: var(--h-topbar);
+
+  /* ======================= 间距（4pt 网格，阶梯不变；节奏放大） ======================= */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-05:      2px;
+  --pad-cell-x: 12px;   /* 不变 —— 表格密度不动 */
+  --pad-card:   20px;   /* v2: 14px → 20px · 卡体纵向内距 = --sp-5。参照 raycast DESIGN.md §5
+                           「Card padding: 16px–32px」取下 1/4 位；14 在 16 以下，是 v1 显得挤的主因之一。 */
+  /* v2 新增：卡体横向内距（v1 硬写 var(--sp-4) 16px → 20px，与纵向同值成正方节奏） */
+  --pad-card-x: 20px;
+  /* v2 新增：hero 格内距 = --sp-6。参照 raycast §5「Card padding 16–32」的中位；hero 比普通卡大一档。 */
+  --pad-hero:   24px;
+  /* v2 新增：卡片间距（= v1 .card margin-bottom var(--sp-5)，令牌化）与区块间距。
+     区块间距参照 raycast DESIGN.md §5「Vertical rhythm: 24px–32px gaps between elements within
+     sections」取上限 32 = --sp-8：卡片改实心后没有玻璃阴影帮忙分组，靠间距分组。 */
+  --gap-card:    var(--sp-5);
+  --gap-section: var(--sp-8);
+
+  /* ======================= 圆角 —— v2 整体上移一档（raycast DESIGN.md §5 Border Radius Scale） ======================= */
+  --r-control: 8px;   /* v2: 7px → 8px · 按钮 / 输入。参照 raycast §5「8px: Input fields, inline components」 */
+  --r-card:    16px;  /* v2: 14px → 16px · 实心卡。参照 raycast §5「16px: Large cards, feature sections」；
+                         12px 标准卡比 v1 还小，与「更大的圆角」相悖，故取 16。 */
+  --r-pill:  999px;   /* 不变 */
+  --radius:    12px;  /* v2: 10px → 12px · 兼容旧引用（.authbanner 等）。参照 raycast §5「12px: Standard cards」 */
+  --r-badge:   6px;   /* v2: 4px → 6px · mono 小标签 / kbd / card-count。参照 raycast §5「6px: buttons,
+                         badges, tags — the workhorse radius」 */
+  --r-overlay: 16px;  /* v2: 14px → 16px · 抽屉 / 模态 / 下拉，与 --r-card 同档 */
+  /* v2 新增：hero 圆角。参照 raycast §5「20px: Hero cards, prominent containers」；
+     仓库已有先例：bigscreen.css .bs-glass border-radius 20px。 */
+  --r-hero:    20px;
+
+  /* ======================= 阴影 —— 实心卡不投影 ======================= */
+  --sh-raised: 0 1px 0 rgba(255, 255, 255, .04) inset;   /* v2: var(--glass-shadow) → 仅顶部 1px 内高光。
+                           参照 raycast §6 shadow philosophy「inset top highlights simulating light from
+                           above」；alpha .04 取自 v1 --glass-shadow 第一层。用于 hover/提起的实心面。 */
+  /* v2 新增：双环（置顶 / 选中的实心卡）。参照 raycast tokens.css --elev-ring「outer card-surface tone
+     + inset deep-bg tone」，用我们的表面色代入：外环 --bg2、内环 --bg。 */
+  --sh-ring:   0 0 0 1px var(--bg2), 0 0 0 1px var(--bg) inset;
+  --sh-pop:    0 4px 16px -2px rgba(0, 0, 0, .55),
+               0 0 0 1px rgba(255, 255, 255, .07);   /* 下拉、tooltip（不变） */
+  --sh-overlay:0 18px 40px -18px rgba(0, 0, 0, .80),
+               0 0 0 1px rgba(255, 255, 255, .08);   /* 抽屉、模态（不变） */
+  --shadow:    var(--sh-raised);               /* 兼容旧引用 */
+  --sh-sticky: 0 1px 0 rgba(255, 255, 255, .07);
+
+  /* ======================= 字体栈（不变） ======================= */
+  --mono: 'Fira Code', ui-monospace, "SF Mono", "SFMono-Regular",
+          "JetBrains Mono", "Roboto Mono", Menlo, Consolas,
+          "Liberation Mono", "DejaVu Sans Mono", monospace;
+  --cjk:  'Fira Sans', -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC",
+          "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --sans: var(--cjk);
+  --data: var(--mono);
+
+  --numeric-data: tabular-nums slashed-zero;
+
+  /* ======================= 交互细节（不变） ======================= */
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px #4ADE80;
+  --focus-outline: 2px solid #4ADE80;
+  --dur-fast: 150ms;
+  --dur:      200ms;
+  --ease:     cubic-bezier(.4, 0, .2, 1);
+  --z-sticky: 10;
+  --z-popover:40;
+  --z-overlay:60;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; }
+}
+
+/* ============================================================================
+   迁移备注（v1 → v2，施工清单见同目录 CHANGES.md）
+   1) .card 族去玻璃：background var(--card-bg)、border 1px var(--card-border)、
+      box-shadow var(--sh-card)，删 backdrop-filter 与 --glass-sheen。
+   2) 玻璃白名单收成 hero + 浮层：.kpi-strip / .drawer-panel / .auth-card（+ 大屏 .bs-glass 待议）。
+   3) 数字三档 48 / 24 / 18 只改令牌值，组件零改动；hero 数字补 --lh-display / --ls-display。
+   4) 圆角与内距整体上移一档；表格密度令牌一个不动。
+   5) glass-guard 对比度基底从「玻璃有效底 #161E31」改为实心 --panel #1B2336。
+   ========================================================================= */

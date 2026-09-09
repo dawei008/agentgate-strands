@@ -1,0 +1,65 @@
+[
+ {
+  "resource": {
+   "attributes": {
+    "deployment.environment.name": "bedrock-agentcore:default",
+    "aws.local.service": "evalanything.DEFAULT",
+    "service.name": "evalanything.DEFAULT",
+    "cloud.region": "us-west-2",
+    "aws.log.stream.names": "otel-rt-logs",
+    "telemetry.sdk.name": "opentelemetry",
+    "aws.service.type": "gen_ai_agent",
+    "telemetry.sdk.language": "python",
+    "cloud.provider": "aws",
+    "service.instance.id": "e1c25438-8f68-46a6-a419-764b328adbdd",
+    "cloud.resource_id": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/evalanything-EXAMPLE0000/runtime-endpoint/DEFAULT:DEFAULT",
+    "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/evalanything-EXAMPLE0000-DEFAULT",
+    "telemetry.sdk.version": "1.44.0",
+    "cloud.platform": "aws_bedrock_agentcore",
+    "telemetry.auto.version": "0.19.0-aws"
+   }
+  },
+  "scope": {
+   "name": "opentelemetry.instrumentation.botocore.bedrock-agentcore",
+   "version": "0.65b0"
+  },
+  "traceId": "6a9f72da3bfa16be3c880d4a38b33930",
+  "spanId": "fbbe163170f4ec93",
+  "parentSpanId": "4087a3f7f8fa11dd",
+  "flags": 256,
+  "name": "Bedrock AgentCore.InvokeAgentRuntime",
+  "kind": "CLIENT",
+  "startTimeUnixNano": 1788834522775568151,
+  "endTimeUnixNano": 1788834529836027241,
+  "durationNano": 7060459090,
+  "attributes": {
+   "aws.local.service": "evalanything.DEFAULT",
+   "telemetry.extended": "true",
+   "rpc.service": "Bedrock AgentCore",
+   "aws.remote.resource.identifier": "tauairline_agentfable5-EXAMPLE0001",
+   "rpc.system": "aws-api",
+   "aws.remote.service": "AWS::BedrockAgentCore",
+   "aws.local.environment": "bedrock-agentcore:default",
+   "aws.remote.operation": "InvokeAgentRuntime",
+   "server.address": "bedrock-agentcore.us-west-2.amazonaws.com",
+   "aws.request_id": "c13881c1-8f6b-4582-871d-7ebde6a5f5d4",
+   "http.status_code": 200,
+   "aws.local.operation": "UnmappedOperation",
+   "aws.span.kind": "CLIENT",
+   "aws.region": "us-west-2",
+   "aws.remote.resource.type": "AWS::BedrockAgentCore::Runtime",
+   "aws.auth.region": "us-west-2",
+   "rpc.method": "InvokeAgentRuntime",
+   "server.port": 443,
+   "aws.bedrock.agentcore.runtime.arn": "arn:aws:bedrock-agentcore:us-west-2:111122223333:runtime/tauairline_agentfable5-EXAMPLE0001",
+   "retry_attempts": 0,
+   "PlatformType": "AWS::BedrockAgentCore",
+   "http.response.status_code": 200,
+   "aws.auth.account.access_key": "EXAMPLE-ACCESS-KEY-ID-REDACTED",
+   "session.id": "evaltest-202609080228-88b105e736d7409d8306f0aa93fe11bf"
+  },
+  "status": {
+   "code": "UNSET"
+  }
+ }
+]

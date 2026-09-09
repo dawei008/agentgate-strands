@@ -1,0 +1,404 @@
+/* 运行报告的**共享样式**：抽屉（.report-drawer 壳）与独立报告页（.report-page）
+   都吃这一份，由 ReportView.tsx 自己 import —— 两个入口各写一套样式的下场是
+   同一份报告在两处长得不一样，而「哪一处对」没人答得上来（同 compareview.css）。
+   ⚠️ 选择器前缀是 **.report-view（共享类）而不是入口类**：写成
+   `.report-drawer .rd-*` 的话，独立页上一条都不命中，表现成「整页没样式」。
+   前缀不能直接删掉：这里有 .vchip / .ccat 这类通用名，裸着会漏到全站。
+   入口专属的东西只有壳内的弹性布局，单独列在文件末尾。
+   结构照 ADR-0014：头部（身份 + 裁决句 + 元信息）→ 全量表 → 本次建议 → 操作条。
+   壳（.drawer-panel：定位/滑入/阴影）在 base.css，这里只做区块形态。 */
+
+
+/* 长文行长上限：CJK 舒适行长约 35-45 字/行，超过之后回扫找行首变难 —— 独立页
+   比抽屉更宽，这道上限在页面入口上**更**要紧。单位是 em 不是 ch（汉字宽 1em，
+   `44ch` 只有 22 个汉字）。落点表一处写全：judge/后端产出的连续中文长文。 */
+.report-view { --rd-measure: 44em; }
+.report-view .rd-long,
+.report-view .rd-case-note,
+.report-view .rt-diag {
+  max-width: var(--rd-measure);
+}
+
+/* ---- 头部：run 身份 + 裁决句 + mono 元信息行 ---- */
+.report-view .rd-head {
+  padding: var(--sp-4) var(--sp-5) var(--sp-3);
+  border-bottom: 1px solid var(--hairline); background: none;   /* 玻璃壳透出 */
+}
+.report-view .rd-head-top { display: flex; align-items: center; gap: var(--sp-2); }
+/* run 编号：mono，是这份报告的身份（fs-h1：页面主身份不小于任何区块标题） */
+.report-view .rd-runid {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-h1); font-weight: 600; letter-spacing: var(--ls-num);
+}
+.report-view .rd-runid .seq { color: var(--faint); }
+/* 圆角方形图标钮（关闭 / ← →）。run 对比抽屉复用同一件 —— 两个抽屉的头部按钮
+   必须一模一样，各写一份就会漂（漏挂选择器的后果是浏览器默认白底方块，实拍过）。
+   ⚠️ 这条住在本文件，于是 compare 抽屉的 ✕ 依赖 reportview.css 被加载。当前
+   全站单 bundle（router.tsx 静态 import 所有页面），两个入口必同时在。真要按
+   路由拆包，先把这一条抬到 styles/ui.css，别在 compareview.css 里再抄一份。 */
+.report-view .rd-close,
+.compare-drawer .rd-close {
+  flex: none; width: 26px; height: 26px; padding: 0;
+  display: grid; place-items: center;
+  background: var(--bg2); border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-control); color: var(--muted); cursor: pointer;
+}
+.report-view .rd-close:hover:not(:disabled),
+.compare-drawer .rd-close:hover:not(:disabled) {
+  border-color: var(--hairline-hover); color: var(--text); background: var(--bg-active);
+}
+.report-view .rd-close:disabled,
+.compare-drawer .rd-close:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 裁决句即头部（ADR-0014）：现算事实句是整份报告的第一层，与 run 身份同档大小。
+   三态：bad=列了失败（红）；ok=全部过线（绿）；neutral（无可评估数据/非终态）
+   保持主文字色 —— 中性不给绿，绿会读成「跑得很好」。 */
+.report-view .rd-verdict {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold);
+  line-height: 1.55; color: var(--text);
+  font-variant-numeric: var(--numeric-data);
+}
+.report-view .rd-verdict.is-bad { color: var(--bad); }
+.report-view .rd-verdict.is-ok { color: var(--good); }
+
+/* 元信息行：mono 小字 + hairline 竖线分隔（时长/触发/成本/版本快照） */
+.report-view .rd-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2);
+  margin-top: 7px;
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-micro); color: var(--faint);
+}
+.report-view .rd-meta .sep { width: 1px; height: 10px; background: var(--line-subtle); }
+.report-view .rd-meta .cjk { font-family: var(--cjk); }
+
+/* ---- 部件大标题（本次建议区 RunAdvice 的 .rd-part-h 在用这一族） ---- */
+.report-view .rd-part-h {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: var(--sp-6) 0 var(--sp-3);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--hairline);
+  font-size: var(--fs-metric-sm); font-weight: var(--fw-semibold);
+  color: var(--text); scroll-margin-top: var(--sp-3);
+}
+.report-view .rd-part-h .no {
+  font-family: var(--mono); font-weight: 600; color: var(--accent-fg);
+}
+
+/* ---- 正文（抽屉里独立滚动，页面上跟着 window 滚——见文件末尾） ---- */
+.report-view .rd-body { padding: var(--sp-4) var(--sp-5) var(--sp-8); }
+
+/* ---- 全量表（一张表管三环节，ADR-0014）----
+   表格零玻璃（glass-guard 纪律 2）：底色只有实心 tint / --bg2，无 backdrop-filter。
+   表格线走 hairline 家族：行线弱档（.045）、组头界线上一档（--hairline）。 */
+.report-view .rt { width: 100%; border-collapse: collapse; }
+/* 组头：环节名 + 聚合数（stageNumbers 原话）+ 状态原话。第一组不要顶线。 */
+.report-view .rt-ghead th {
+  padding: var(--sp-4) var(--sp-2) 4px 0;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+}
+.report-view tbody:first-of-type .rt-ghead th { padding-top: 0; }
+.report-view .rt-ghead .g {
+  display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0;
+}
+.report-view .rt-ghead .gname {
+  flex: none; font-size: var(--fs-section); font-weight: 600; color: var(--text);
+}
+.report-view .rt-ghead .gnum {
+  flex: none; font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption); font-weight: 400; color: var(--text);
+}
+.report-view .rt-ghead.is-empty .gnum,
+.report-view .rt-ghead.is-stopped .gnum { color: var(--muted); font-family: var(--cjk); }
+/* 执行失败标记：实心 warn/bad 家族 chip（纪律 3） */
+.report-view .rt-ghead .gmark {
+  flex: none; padding: 0 5px; border-radius: var(--r-badge);
+  background: var(--bad-bg); border: 1px solid var(--bad-line);
+  font-size: var(--fs-nano); font-weight: 400; color: var(--bad); white-space: nowrap;
+}
+/* 状态原话：单行省略号 + title 看全（empty/failed 的「为什么」全在这行） */
+.report-view .rt-ghead .gnote {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--fs-caption); font-weight: 400; color: var(--muted);
+}
+
+/* ---- 逐评估器列表格（组头下、逐行前；2026-09-03 加回）----
+   表格零玻璃同刑：无底色无 blur，行线/列线只用 hairline 家族。
+   列宽固定 → 各行同缘对齐，数字 mono + tabular-nums 右对齐（要能上下比数）。 */
+.report-view .rt-evals td {
+  /* 左缩进 20px 对齐行首用例名（chev 14px + gap 6px，与 .rt-body 同缘） */
+  padding: 2px var(--sp-2) 6px 20px;
+  border-top: 0;
+}
+.report-view .rte {
+  display: grid; grid-template-columns: minmax(0, 1fr) 84px 66px;
+  align-items: center; gap: var(--sp-2);
+  padding: 3px 0;
+  font-size: var(--fs-caption);
+  border-bottom: 1px solid var(--hairline-soft);   /* 行线 */
+}
+.report-view .rte:last-child { border-bottom: 0; }   /* 底边由下一行的顶线收口 */
+/* observe 变体多一列分母（判定会话）：分母是不是有记录本身就是要透出的信息 */
+.report-view .rte.is-obs { grid-template-columns: minmax(0, 1fr) 84px 56px 96px; }
+.report-view .rte .ename {
+  color: var(--text); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.report-view .rte .emean,
+.report-view .rte .ecount,
+.report-view .rte .eses {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  text-align: right; color: var(--text);
+  border-left: 1px solid var(--hairline-soft);   /* 列线：表头与数据行同缘 */
+  padding-left: var(--sp-2);
+}
+/* 拖分的那一行（低于目标线 SCORE_TARGET）转警示色——「谁在拖」要能一眼挑出来 */
+.report-view .rte .emean.is-low { color: var(--warn); font-weight: 600; }
+/* 缺数据档：中性灰 + 中文字体（这是文案不是数字，绝不许显示成 0） */
+.report-view .rte .emean.is-none,
+.report-view .rte .eses.is-none {
+  color: var(--muted); font-family: var(--cjk); font-size: var(--fs-nano);
+}
+.report-view .rte.is-head {
+  padding-bottom: 3px;
+  font-size: var(--fs-nano);
+  border-bottom: 1px solid var(--hairline);   /* 表头与数据行的界线上一档 */
+}
+.report-view .rte.is-head .ename,
+.report-view .rte.is-head .emean,
+.report-view .rte.is-head .ecount,
+.report-view .rte.is-head .eses {
+  color: var(--muted); font-family: var(--cjk); font-weight: 400;
+}
+
+/* 行：一行 = 一个用例/会话/攻击。失败行标红置顶（置顶由行序表达，红由底色）。 */
+.report-view .rt-row td {
+  padding: 3px var(--sp-2) 3px 0;
+  border-top: 1px solid var(--hairline-soft);
+  vertical-align: middle;
+}
+.report-view tbody .rt-ghead + .rt-row td { border-top: 0; }   /* 组头自带界线 */
+.report-view .rt-row:hover td { background: var(--tint-2); }
+/* 失败行：bad 浅底 + 左缘 2px 色条（同 .is-hi 的形，语义换 bad） */
+.report-view .rt-row.is-fail td { background: var(--bad-bg); }
+.report-view .rt-row.is-fail td:first-child { box-shadow: inset 2px 0 0 var(--bad-dot); }
+/* 没跑成的行：整行降权（它没有结论，不该与判定行同亮） */
+.report-view .rt-row.is-none .cname { color: var(--muted); }
+
+/* 行首格：整格是展开按钮（别让人去瞄一个 12px 的小三角） */
+.report-view .rt-name { width: 46%; }
+.report-view .rt-toggle {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 2px 0; border: 0; background: none; text-align: left;
+  font-size: var(--fs-caption); color: var(--text); cursor: pointer;
+}
+/* 焦点环走 outline（纪律 4：box-shadow 环会被玻璃 glow 吃掉） */
+.report-view .rt-toggle:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+.report-view .rt-toggle .chev {
+  flex: none; color: var(--muted);
+  transition: transform var(--dur-fast, .12s) ease;
+}
+.report-view .rt-row.is-open .rt-toggle .chev { transform: rotate(90deg); }
+.report-view .rt .cname {
+  font-family: var(--mono); font-size: var(--fs-nano); color: var(--text);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 次要标识（分类/Agent/策略·严重度）：实心 chip 底（纪律 3） */
+.report-view .rt .ccat {
+  flex: none; max-width: 138px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 0 5px; border-radius: var(--r-badge);
+  background: var(--bg2); font-size: var(--fs-nano); color: var(--muted);
+}
+/* 判定列：右对齐的小格串 */
+.report-view .rt-cells { text-align: right; white-space: nowrap; }
+.report-view .rt-cells > * { margin-left: 4px; }
+/* 没跑成标记：warn 实心底，语义差别写在文字与 title 上 */
+.report-view .rt .cmark {
+  display: inline-flex; align-items: center; padding: 0 5px;
+  border-radius: var(--r-badge);
+  background: var(--warn-bg); border: 1px solid var(--warn-line);
+  font-size: var(--fs-nano); color: var(--warn); white-space: nowrap;
+}
+
+/* 评估器小格：实心底 + mono 分数（分+过/不过+label 档位）。
+   三档配色 = 通过/不通过/中性；「挂了的格红」= is-fail 的边与字全红。 */
+.report-view .vchip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 5px; border-radius: var(--r-badge);
+  background: var(--bg2); border: 1px solid var(--hairline);
+  font-size: var(--fs-nano); white-space: nowrap; vertical-align: middle;
+}
+.report-view .vchip .vn {
+  max-width: 96px; overflow: hidden; text-overflow: ellipsis;
+  color: var(--muted);
+}
+/* label 档位（B1 契约）：judge 给的档位词，弱一档摆在分数前 */
+.report-view .vchip .vlb {
+  max-width: 84px; overflow: hidden; text-overflow: ellipsis;
+  color: var(--faint-on-sunken, var(--muted)); font-style: italic;
+}
+.report-view .vchip .vs {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  color: var(--text);
+}
+.report-view .vchip.is-pass .vs { color: var(--good); }
+.report-view .vchip.is-fail { border-color: var(--bad-line); background: var(--bad-bg); }
+.report-view .vchip.is-fail .vs { color: var(--bad); font-weight: 600; }
+/* 中性档：评估器自己失败了，没产出判定——既不是通过也不是不通过，
+   更不是 0 分。中文字体（这是文案不是数字）+ 最弱灰。 */
+.report-view .vchip.is-none .vs { color: var(--muted); font-family: var(--cjk); }
+
+/* ---- 展开态（证据链）：判词 → 原文对照 → 诊断 → 跳 trace ---- */
+.report-view .rt-detail td { padding: 0; border-top: 0; }
+.report-view .rt-body {
+  padding: var(--sp-2) var(--sp-2) var(--sp-3) 20px;
+  border-top: 1px dashed var(--hairline-soft);
+}
+.report-view .rt-row.is-fail + .rt-detail td { box-shadow: inset 2px 0 0 var(--bad-dot); }
+.report-view .rd-case-note {
+  margin: 0 0 var(--sp-2); padding: var(--sp-2);
+  background: var(--warn-bg); border: 1px solid var(--warn-line);
+  border-radius: var(--r-control);
+  font-size: var(--fs-nano); line-height: 1.65; color: var(--muted);
+}
+/* 原文对照的字段（输入/期望输出/实际输出/输出预览/攻击对话） */
+.report-view .rd-field { margin-bottom: var(--sp-2); }
+.report-view .fl {
+  font-size: var(--fs-nano); color: var(--faint-on-sunken, var(--muted));
+  letter-spacing: var(--ls-caps-cjk); margin-bottom: 2px;
+}
+.report-view .rd-long {
+  font-size: var(--fs-caption); line-height: 1.7; color: var(--muted);
+  white-space: pre-wrap; word-break: break-word;
+}
+.report-view .rd-long .more {
+  display: inline; margin-left: 4px; padding: 0; border: 0; background: none;
+  font-size: var(--fs-nano); color: var(--accent-fg); cursor: pointer;
+}
+.report-view .rd-long .more:focus-visible { outline: var(--focus-outline); }
+/* judge 判词（逐评估器：label + 分 + 过/不过 + reason 全文） */
+.report-view .rd-reasons { margin: 0 0 var(--sp-2); }
+.report-view .rd-reason {
+  margin-bottom: var(--sp-2); padding-left: var(--sp-2);
+  border-left: 2px solid var(--line-subtle);
+}
+.report-view .rd-reason .rh { display: flex; align-items: center; gap: 6px; }
+.report-view .rd-reason .vn { font-family: var(--mono); font-size: var(--fs-nano); color: var(--text); }
+.report-view .rd-reason .vlb {
+  padding: 0 4px; border-radius: var(--r-badge);
+  background: var(--bg2); font-size: var(--fs-nano);
+  color: var(--faint-on-sunken, var(--muted)); font-style: italic;
+}
+.report-view .rd-reason .vs {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano); color: var(--text);
+}
+.report-view .rd-reason .vs.is-none { font-family: var(--cjk); color: var(--muted); }
+.report-view .rd-reason .vp {
+  padding: 0 4px; border-radius: var(--r-badge);
+  background: var(--bg2); font-size: var(--fs-nano);
+}
+.report-view .rd-reason .vp.is-pass { color: var(--good); }
+.report-view .rd-reason .vp.is-fail { color: var(--bad); }
+/* 诊断（category + 根因 + 修法）：左细条分层，chip 实心底 */
+.report-view .rt-diag {
+  margin: 0 0 var(--sp-2); padding-left: var(--sp-2);
+  border-left: 2px solid var(--line-subtle);
+}
+.report-view .rt-diag-f { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+.report-view .rt-diag-f .ev {
+  min-width: 0; font-size: var(--fs-caption); line-height: 1.65; color: var(--muted);
+}
+.report-view .rt-diag-rc { margin-top: var(--sp-1); }
+.report-view .rt-diag-rc .why {
+  margin: 2px 0 0; font-size: var(--fs-caption); line-height: 1.7; color: var(--text);
+  white-space: pre-wrap;
+}
+.report-view .rt-diag-rc .fix {
+  margin: 2px 0 0; font-size: var(--fs-caption); line-height: 1.7; color: var(--muted);
+  white-space: pre-wrap;
+}
+/* 行操作：攻击会话 id（mono badge）+ 跳 trace */
+.report-view .rt-actions {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+}
+.report-view .rt-sids { display: inline-flex; gap: 4px; flex-wrap: wrap; min-width: 0; }
+
+/* ---- 本次建议区（RunAdvice，ADR-0014 §6）----
+   零玻璃；badge/引用 chip 实心底（纪律 3）。条目形态照诊断块的左细条家族：
+   修法是主体（--text），根因解释小字（--muted），引用 chips 收尾。 */
+.report-view .rt-advice { margin-top: var(--sp-2); }
+.report-view .rt-advice-gh {
+  margin: var(--sp-3) 0 var(--sp-2);
+  font-size: var(--fs-section); font-weight: 600; color: var(--text);
+}
+.report-view .rt-advice-item {
+  margin: 0 0 var(--sp-3); padding-left: var(--sp-2);
+  border-left: 2px solid var(--line-subtle);
+  max-width: var(--rd-measure);
+}
+.report-view .rt-advice-item .head {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+}
+.report-view .rt-advice-item .head .spacer { flex: 1; }
+.report-view .rt-advice-item .fix {
+  margin: var(--sp-1) 0 0; font-size: var(--fs-body); line-height: 1.7;
+  color: var(--text); white-space: pre-wrap;
+}
+.report-view .rt-advice-item .why {
+  margin: 2px 0 0; font-size: var(--fs-caption); line-height: 1.7;
+  color: var(--muted); white-space: pre-wrap;
+}
+.report-view .rt-advice-item .refs {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  margin-top: var(--sp-1);
+}
+/* 引用 chip：可点（跳全量表那一行），实心 --bg2 底（纪律 3） */
+.report-view .rt-advice-ref {
+  padding: 0 6px; border-radius: var(--r-badge);
+  background: var(--bg2); border: 1px solid var(--hairline-strong);
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-nano); line-height: 1.8; color: var(--muted); cursor: pointer;
+}
+.report-view .rt-advice-ref:hover {
+  border-color: var(--hairline-hover); color: var(--text); background: var(--bg-active);
+}
+.report-view .rt-advice-adopted {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-nano); color: var(--good);
+}
+
+/* ---- 底部操作条 ---- */
+.report-view .rd-foot {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-5);
+  border-top: 1px solid var(--hairline); background: var(--bg2);   /* 底部操作条实面 */
+}
+.report-view .rd-foot .spacer { flex: 1; }
+.report-view .rd-foot .hint { font-size: var(--fs-nano); color: var(--muted); }
+
+/* ---------- 入口专属 ①：抽屉壳内的弹性布局 ----------
+   .drawer-panel 是 column flex 容器（base.css），.report-view 自己也得撑满它，
+   否则区块只按内容高度排、正文区拿不到剩余空间 ⇒ 底部操作条飘在中间。
+   头/脚定死不伸缩，正文独立滚动。页面上没有这个约束（整页跟着 window 滚）。 */
+.report-drawer .report-view {
+  display: flex; flex-direction: column; height: 100%; min-height: 0;
+}
+.report-drawer .rd-head,
+.report-drawer .rd-foot { flex: none; }
+.report-drawer .rd-body { flex: 1; overflow: auto; }
+
+/* ---------- 入口专属 ②：独立页 ----------
+   底部操作条吸底。抽屉里它天生一直在（弹性布局，正文自己滚），页面上整页
+   跟着 window 滚 ⇒ 不吸的话「导出 / 与上次对比 / 查看 trace」得先滚到几屏之后
+   才够得着，而这三件事跟读到哪一行无关。
+   ⚠️ 吸底能成立的前提是祖先上**没有** overflow: hidden —— `.card` 自带那一条，
+   页面壳因此显式改回 visible（见 pages/report/report.css 里的长注释）。
+   圆角跟着卡壳的下沿走：它是卡片的最后一个子元素，方角会戳出 14px 的圆角外。 */
+.report-page .rd-foot {
+  position: sticky; bottom: 0; z-index: 2;
+  border-bottom-left-radius: var(--r-card);
+  border-bottom-right-radius: var(--r-card);
+}

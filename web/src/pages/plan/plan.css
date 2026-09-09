@@ -1,0 +1,748 @@
+/* 方案详情页 / 方案编辑器：只做布局与页面级微调，组件形态一律 ui.css。 */
+
+/* ---------- 页头 ----------
+   布局已交给 <PageHeader>（.pagehead：sticky / 48px / 底边线）。
+   这里只留 sub 里那个 agent 链接的形态。 */
+.plan-agent {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--accent-fg);
+  text-decoration: none;
+}
+.plan-agent:hover { text-decoration: underline; }
+
+/* ---------- 运行进度卡（M3 增强：滚动式进度日志 + 计时 + 心跳活性） ----------
+   控件不玻璃纪律：卡面不透明 --bg2；语义色只上状态点与关键词，日志 mono 小字。 */
+.plan-progress {
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-4);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-card);
+  background: var(--bg2);
+  font-size: var(--fs-caption);
+}
+.plan-progress.is-error { border-color: var(--bad-line); }
+.plan-progress.is-done { border-color: var(--good-line); }
+
+/* 标题行：状态 + 计时 + 心跳指示 */
+.plan-progress-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 24px;
+}
+.plan-progress-title {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-weight: 600; color: var(--text);
+  font-variant-numeric: var(--numeric-data);
+}
+.plan-progress-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--viz-1, var(--accent)); }
+.plan-progress-title .dot.pulse { animation: plan-progress-pulse 1.6s ease-in-out infinite; }
+@keyframes plan-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-progress-title .dot.pulse { animation: none; }
+}
+.plan-progress.is-error .plan-progress-title { color: var(--bad); }
+
+/* 心跳指示三档：ok 灰绿 / waiting 琥珀 / stale 红——语义色只上点与这行字 */
+.plan-progress-liveness {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-micro); color: var(--muted);
+  font-variant-numeric: var(--numeric-data);
+}
+.plan-progress-liveness .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good-dot); }
+.plan-progress-liveness.waiting { color: var(--warn); }
+.plan-progress-liveness.waiting .dot { background: var(--warn-dot); }
+.plan-progress-liveness.stale { color: var(--bad); }
+.plan-progress-liveness.stale .dot { background: var(--bad-dot); }
+
+.plan-progress-error {
+  margin: var(--sp-1) 0 0;
+  color: var(--bad); font-size: var(--fs-caption); line-height: 1.6;
+}
+
+/* 日志区：mono 小字，最近 5 条，老的折叠 */
+.plan-progress-log { margin-top: var(--sp-1); }
+.plan-progress-expand { font-size: var(--fs-micro); padding: 0; }
+.plan-progress-lines {
+  list-style: none; margin: 2px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.plan-progress-lines .line {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  line-height: 1.6;
+}
+.plan-progress-lines .line-ts { flex: none; color: var(--faint); }
+.plan-progress-lines .line-text { min-width: 0; word-break: break-word; }
+.plan-progress-lines .line.good .line-text { color: var(--text); }
+.plan-progress-lines .line.bad .line-text { color: var(--bad); }
+
+/* ---------- 运行中实时对话（进度卡内的下半格） ----------
+   三类环节共用（红队 attack_turn + 回归/模拟 turn）；类名沿用 .atk* 前缀不改，
+   避免与红队那批产生大面积样式冲突（形态完全一致，只多了分组头与 agent 名）。
+   原型权威：ui-prototypes/redteam-turns/index.html 场景 A（shot-a.png）。
+   玻璃纪律：本段位于 .plan-progress（实心 --bg2 卡）内部 —— 唯一玻璃层内部
+   **禁止再开 blur**；所有底一律实心 --bg2 / --panel，颜色按名引用 tokens.css。
+   零 backdrop-filter：glass-guard.test.ts 纪律 1 白名单不含 .atk*。 */
+.atk {
+  margin-top: var(--sp-2);
+  border-top: 1px solid var(--hairline);
+  padding-top: var(--sp-2);
+}
+.atk-head {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+}
+.atk-toggle {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--text);
+  font-family: var(--cjk); font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+.atk-toggle:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+/* 折叠三角在 .plan-progress（实心 --bg2）上 → 用 --faint-on-sunken 那一档
+   （--faint 是玻璃底/画布底的岗，放 --bg2 上不够 4.5） */
+.atk-tw {
+  width: 10px; font-size: 9px; color: var(--faint-on-sunken);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.atk[data-open="false"] .atk-tw { transform: rotate(-90deg); }
+/* 整块可一键收起：说明条与分栏一起收，头行留着当抽屉把手 */
+.atk[data-open="false"] .atk-honest,
+.atk[data-open="false"] .atk-group { display: none; }
+
+.atk-count { font-size: var(--fs-micro); color: var(--muted); }
+.atk-count b { color: var(--text); font-weight: var(--fw-semibold); }
+/* 头行的 badge 压一档高度以对齐 11px 小字（底仍是 ui.css 的实心语义底） */
+.atk-lane-badge { height: 16px; padding: 0 6px; }
+.atk-sw {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-micro); color: var(--muted); cursor: pointer;
+}
+.atk-sw input { accent-color: var(--accent); width: 12px; height: 12px; margin: 0; }
+.atk-chip { height: var(--h-control-xs); font-size: var(--fs-caption); }
+
+/* 诚实说明条：实心 --panel + 左侧中性色条，刻意不上语义色
+   ——它讲的是「数据边界」，不是告警 */
+.atk-honest {
+  margin: 6px 0 0;
+  display: flex; gap: 6px; align-items: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--line-strong);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  padding: 5px var(--sp-2);
+  font-size: var(--fs-nano); line-height: 1.6; color: var(--muted);
+}
+.atk-honest b { color: var(--text); font-weight: var(--fw-semibold); }
+.atk-honest code {
+  font-family: var(--mono); font-size: 9px;
+  background: var(--bg2); border: 1px solid var(--line-subtle);
+  border-radius: 3px; padding: 0 3px; color: var(--text);
+}
+
+/* 分组：混跑（红队 + 用例对话同时在场）时每类一组，各自一行栏。
+   单类时不画组标题（组件侧判定），这里只管间距。 */
+.atk-group + .atk-group { margin-top: var(--sp-2); }
+.atk-group-head {
+  margin: 6px 0 0;
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-micro); font-weight: var(--fw-semibold); color: var(--text);
+}
+.atk-group-n { font-size: var(--fs-nano); font-weight: var(--fw-regular); color: var(--faint-on-sunken); }
+
+/* 并发分栏：一路一栏横向并排（红队 3 = MAX_CONCURRENT_ATTACKS，
+   回归/模拟 5 = RUN_TTL_BATCH，超 3 列由 grid 自动换行成 3+2）。
+   minmax(0,1fr) 让长消息在窄栏里换行而不是把栏撑开。 */
+.atk-lanes {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: repeat(var(--atk-cols, 3), minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.atk-lane {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+}
+.atk-lane-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px var(--sp-2);
+  background: var(--tint-1);
+  border-bottom: 1px solid var(--hairline);
+}
+/* 栏头标识：红队是 attack#N（短），回归/模拟是**真用例名**（可能很长）
+   → 溢出省略号 + title 兜全文，绝不把栏撑开（栏宽是分栏形态的地基）。 */
+.atk-lane-id {
+  font-size: var(--fs-micro); font-weight: var(--fw-semibold); color: var(--text);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* agent 名只有 turn 事件才有（attack_turn 没这个字段）——同一用例多 agent 时
+   它是唯一能区分两栏的信息，故与用例名同级显示而不是塞进 meta。 */
+.atk-lane-agent {
+  flex: none;
+  font-size: var(--fs-nano); color: var(--faint-on-sunken);
+  background: var(--bg2); border: 1px solid var(--line-subtle);
+  border-radius: 3px; padding: 0 4px;
+  max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.atk-lane-meta {
+  font-size: var(--fs-nano); color: var(--faint);
+  margin-left: auto; white-space: nowrap;
+}
+/* 尾窗高度封顶：展开本路后也不许把进度卡顶穿（长跑 24 轮 × 3 行） */
+.atk-lane-body {
+  padding: 5px var(--sp-2) 6px;
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 214px; overflow-y: auto;
+}
+.atk-fold {
+  font-family: var(--mono); font-size: var(--fs-nano); color: var(--faint);
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+.atk-fold-btn { font-size: var(--fs-nano); padding: 0; }
+
+/* 单轮：角色靠 2px 左色条 + 单字标区分，不做左右气泡对齐
+   ——栏宽约 440px，气泡会把每条挤成两三字一行（原型实测）。
+   琥珀 = 攻击方，蓝 = 被测方，绿边 = 本路最新一轮。 */
+.atk-turn {
+  display: flex; gap: 6px; align-items: flex-start;
+  background: var(--bg2);
+  border: 1px solid var(--neutral-line);
+  border-left: 2px solid var(--warn-dot);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  padding: 4px 6px;
+}
+.atk-turn.target { border-left-color: var(--viz-2); }
+.atk-turn .atk-who {
+  flex: none; width: 14px; height: 14px; border-radius: 3px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--cjk); font-size: 9px; font-weight: var(--fw-semibold); line-height: 1;
+  background: var(--warn-bg); color: #FBBF24;
+}
+.atk-turn.target .atk-who { background: var(--info-bg); color: var(--info); }
+/* 未知 role（缓存回放的历史 conversation 可能带别的值）：中性底 + 原文首字，
+   不套任何一侧的语义色 —— 不知道是谁说的就别暗示是谁说的。 */
+.atk-turn .atk-who.unknown {
+  background: var(--bg2); border: 1px solid var(--line-subtle);
+  color: var(--faint-on-sunken); font-family: var(--mono);
+}
+.atk-turn .atk-tno {
+  flex: none; font-size: var(--fs-nano); color: var(--faint-on-sunken);
+  min-width: 14px; text-align: right;
+}
+/* 每条最多 3 行截断：后端单条上限 1500 字符，全量展开单轮就能吃掉整屏 */
+.atk-msg {
+  margin: 0; min-width: 0;
+  font-size: var(--fs-nano); line-height: 1.6; color: var(--muted);
+  overflow: hidden; word-break: break-word;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+}
+.atk-turn.target .atk-msg { color: var(--text); }
+.atk-turn.latest { border-left-color: var(--accent); }
+.atk-turn.latest .atk-msg { color: var(--text); }
+
+/* 空响应/调用失败：与真回复形态**明确不同**——斜纹档条 + 虚线框，不写成「拒绝」。
+   斜纹只走左侧 10px 档条，不铺到文字底下（铺满会把 10.5px 小字压掉可读性）。 */
+.atk-turn.blank {
+  background:
+    repeating-linear-gradient(135deg, var(--bg2) 0 4px, var(--line-subtle) 4px 8px)
+      left / 10px 100% no-repeat,
+    var(--bg2);
+  border: 1px dashed var(--line-subtle);
+  border-left: 2px solid var(--warn-dot);
+  padding-left: 14px;
+}
+.atk-turn.blank .atk-who { background: var(--bg2); color: var(--faint-on-sunken); }
+.atk-turn.blank .atk-msg { color: var(--faint-on-sunken); -webkit-line-clamp: 2; }
+.atk-turn.blank .atk-msg b { color: #FBBF24; font-weight: var(--fw-semibold); }
+/* marker 原文用 mono 展示：让排查者知道 judge 读到的就是这段，不是我们编的解释。
+   margin-left 是为了不让原文贴死在粗体短标上（中文无词间空格，贴死会读成一句）。 */
+.atk-marker { font-family: var(--mono); color: var(--faint-on-sunken); margin-left: 5px; }
+
+/* ---------- 线上评估实时会话清单（ObserveSessionsPanel） ----------
+   observe 环节不发逐轮事件（评的是已结束的 trace），会话并发乱序完成 →
+   形态是**清单**不是分栏对话：评完一条落一行。
+   与 .atk* 同处 .plan-progress（实心 --bg2 卡）内部 —— 唯一玻璃层内部
+   **禁止再开 blur**；所有底实心 --panel / --bg2，颜色按名引用 tokens.css。
+   零 backdrop-filter：glass-guard.test.ts 纪律 1 白名单不含 .obs*。
+   刻意**不用 table**：玻璃纪律「表格零玻璃」之外，行内还要塞可展开的 reason
+   长文与多枚评估器 chip，语义上是列表项不是数据格。 */
+.obs {
+  margin-top: var(--sp-2);
+  border-top: 1px solid var(--hairline);
+  padding-top: var(--sp-2);
+}
+.obs-head { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+/* 收起时说明条与清单一起收，头行留着当抽屉把手（与 .atk 同手势） */
+.obs[data-open="false"] .obs-honest,
+.obs[data-open="false"] .obs-rows { display: none; }
+.obs-count { font-size: var(--fs-micro); color: var(--muted); }
+.obs-count b { color: var(--text); font-weight: var(--fw-semibold); }
+.obs-badge { height: 16px; padding: 0 6px; }
+
+/* 说明条：与 .atk-honest 同一档（中性色条，讲数据边界不是告警） */
+.obs-honest {
+  margin: 6px 0 0;
+  display: flex; gap: 6px; align-items: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--line-strong);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  padding: 5px var(--sp-2);
+  font-size: var(--fs-nano); line-height: 1.6; color: var(--muted);
+}
+.obs-honest b { color: var(--text); font-weight: var(--fw-semibold); }
+
+.obs-rows {
+  margin: 6px 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 4px;
+  /* 上界是 ROW_KEEP=50 行，全渲不虚拟化 → 给个视窗高度免得把进度卡拉到几屏 */
+  max-height: 260px; overflow-y: auto;
+}
+.obs-row {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--line-strong);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  padding: 4px var(--sp-2);
+  min-width: 0;
+}
+/* 四档结论各一条左色条。**没有 0 分档** —— 实时期不做判定。
+   无分数（评估器全挂 / trace 无内容）是 warn 档，不是 bad：
+   它讲的是「评不了」，不是「评得差」。 */
+.obs-row[data-status="scored"] { border-left-color: var(--good-line); }
+.obs-row[data-status="no-score"] { border-left-color: var(--warn-line); }
+.obs-row[data-status="no-content"] { border-left-color: var(--warn-line); }
+.obs-row[data-status="errored"] { border-left-color: var(--bad-line); }
+
+.obs-row-head {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;
+}
+.obs-seq {
+  flex: none; min-width: 16px; text-align: right;
+  font-size: var(--fs-nano); color: var(--faint-on-sunken);
+}
+.obs-id {
+  font-family: var(--mono); font-size: var(--fs-nano); color: var(--text);
+  max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 均分：等宽 + tabular 数字，多行上下对得齐；null 时显示「无分」/「—」 */
+.obs-mean {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: var(--fs-caption); font-weight: var(--fw-semibold); color: var(--text);
+  min-width: 4ch;
+}
+.obs-row[data-status="no-score"] .obs-mean,
+.obs-row[data-status="no-content"] .obs-mean,
+.obs-row[data-status="errored"] .obs-mean { color: var(--faint-on-sunken); font-weight: var(--fw-regular); }
+
+.obs-scores { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
+/* 评估器 chip：底实心 --bg2（玻璃纪律 chip/badge 一律实心） */
+.obs-score {
+  height: var(--h-control-xs); padding: 0 5px; gap: 4px;
+  font-size: var(--fs-nano);
+  background: var(--bg2); border: 1px solid var(--line-subtle); color: var(--muted);
+}
+.obs-score .n {
+  font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text);
+}
+/* errored 评估器：SDK 会把它伪造成 0 分，后端已置 null。这里画成中性虚线，
+   分数位显示「—」——绝不能看着像一个真的低分。 */
+.obs-score[data-errored] { border-style: dashed; color: var(--faint-on-sunken); }
+.obs-score[data-errored] .n { color: var(--faint-on-sunken); }
+
+.obs-spans { font-size: var(--fs-nano); color: var(--faint-on-sunken); }
+.obs-more { font-size: var(--fs-nano); padding: 0; }
+
+.obs-err {
+  margin: 3px 0 0; font-size: var(--fs-nano); line-height: 1.5;
+  color: var(--bad); word-break: break-word;
+}
+.obs-warn {
+  margin: 3px 0 0; font-size: var(--fs-nano); line-height: 1.5;
+  color: var(--warn); word-break: break-word;
+}
+.obs-detail {
+  margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line-subtle);
+}
+.obs-preview {
+  margin: 0; font-size: var(--fs-nano); line-height: 1.6; color: var(--muted);
+  word-break: break-word;
+}
+.obs-reason {
+  margin: 4px 0 0; font-size: var(--fs-nano); line-height: 1.6; color: var(--muted);
+  word-break: break-word;
+}
+.obs-reason b {
+  color: var(--text); font-weight: var(--fw-semibold); margin-right: 5px;
+}
+
+/* ---------- 趋势卡（M2） ---------- */
+/* 图 + 右侧统计列（原型 plandetail.html 的 .chart-wrap） */
+.plan-trend-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 232px;
+  /* 逐评估器序列色轮（纯回归方案的次序列；主线通过率走 --viz-1 绿）。
+     只服务这一张图，故留在页面样式里而不是 tokens.css 的全站换肤面；
+     若哪天别处也要画多序列，再提升成 --viz-3..7 全站令牌。
+     选色约束：暗底 2px 细线可辨，且与主线绿 #22C55E、目标线琥珀 #FBBF24
+     拉开（承文字的对比度不适用——线色不承文字，图例文字走 --text）。 */
+  --ev-1: var(--viz-2);   /* 蓝 #60A5FA */
+  --ev-2: #C084FC;        /* 紫 */
+  --ev-3: #22D3EE;        /* 青 */
+  --ev-4: #F472B6;        /* 粉 */
+  --ev-5: #FDBA74;        /* 橙（与琥珀目标线区分：更偏浅橙且不虚线） */
+}
+.plan-trend-body { padding: var(--sp-3) var(--sp-3) var(--sp-2) 0; min-width: 0; }
+/* 右侧区间统计：hairline 竖分隔 + .stat-list（形态见 ui.css） */
+.plan-trend-side {
+  border-left: 1px solid var(--hairline);
+  padding: var(--sp-4);
+}
+.plan-trend-side .side-title {
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: var(--ls-caps-cjk);
+}
+/* 窄屏：统计列退到图下方，避免 232px 挤掉图 */
+@media (max-width: 1100px) {
+  .plan-trend-wrap { grid-template-columns: minmax(0, 1fr); }
+  .plan-trend-side { border-left: 0; border-top: 1px solid var(--hairline); }
+}
+.plan-trend-empty {
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--faint);
+  font-size: var(--fs-caption);
+}
+/* 空态第二行：说清这张图现在按什么口径画（纯回归方案） */
+.plan-trend-empty .sub {
+  display: block; margin-top: 5px;
+  font-size: var(--fs-nano); color: var(--muted);
+}
+
+/* 图例（仅多序列的回归口径出）：色点承数据色，文字一律文本色（dataviz 纪律）。
+   零玻璃、无独立底色——它贴在图下方，不是 chip。 */
+.plan-trend-legend {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding: 2px 0 var(--sp-1) var(--sp-4);
+}
+.plan-trend-legend .lg-item {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-nano); color: var(--muted);
+}
+.plan-trend-legend .lg-dot {
+  width: 7px; height: 7px; flex: none; border-radius: 50%;
+}
+/* 通过率是主线：名字加重，与四条次序列拉开主次 */
+.plan-trend-legend .lg-item.is-main .lg-n { color: var(--text); font-weight: 600; }
+.plan-trend-legend .lg-item.is-main .lg-dot { width: 9px; height: 9px; }
+.plan-trend-legend .lg-v {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  color: var(--text);
+}
+
+/* 版本变更说明行（图内竖线的可读副本，两套口径共用）。
+   纯排版：不设背景 —— 里面的版本标签用的是 .badge（实心 --neutral-bg），
+   玻璃拟态纪律里 chip/badge 一律不透明底，这一层不再叠任何半透明面。 */
+.plan-trend-versions {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding: 2px 0 var(--sp-1) var(--sp-4);
+}
+.plan-trend-versions .tv-cap { font-size: var(--fs-nano); color: var(--faint); }
+.plan-trend-versions .tv-item {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-nano); color: var(--muted);
+}
+.plan-trend-versions .tv-at {
+  font-variant-numeric: var(--numeric-data); color: var(--faint);
+}
+
+/* 运行历史行上的版本 chip（run 快照，不是 Agent 当前标签）：与结果 badge
+   同高，靠 margin 与它拉开，不进 .badge 内部（那里装的是指标 chip）。 */
+.plan-run-version { margin-left: var(--sp-2); }
+
+
+/* ---------- 编辑器（M4） ---------- */
+.plan-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 240px);
+  gap: var(--sp-3) var(--sp-5);
+  align-items: start;
+}
+.plan-stage-card {
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-card);
+  background: var(--card-bg);
+  box-shadow: var(--sh-card);
+  margin-bottom: var(--sp-3);
+  overflow: hidden;
+}
+.plan-stage-card-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--tint-1);       /* 卡头 tint，非玻璃 */
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+.plan-stage-card-head .spacer { flex: 1; }
+.plan-stage-card-body {
+  padding: var(--sp-3);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.plan-eval-picker {
+  display: flex; flex-wrap: wrap; gap: var(--sp-1);
+}
+/* 环节卡内说明行（原型 regression-split：下拉/评估器下的一句话跑法说明） */
+.stage-note {
+  color: var(--faint); font-size: var(--fs-micro); line-height: var(--lh-snug);
+  margin: 4px 0 0;
+}
+.plan-lineage-warn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--warn-line);
+  border-radius: var(--r-control);
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: var(--fs-micro);
+}
+.plan-editor-actions {
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.plan-editor-error { color: var(--bad); font-size: var(--fs-caption); }
+
+/* ---------- 定时选择器（结构权威：ui-prototypes/schedule-picker/index.html） ----------
+   控件不玻璃纪律：分段选择器/星期块/时间组/cron 输入底一律实心 --bg2，
+   卡内层次只用 tint/hairline；无任何新增 backdrop-filter。 */
+
+/* 三档分段选择器（卡头右侧）：实心槽 + accent 选中 */
+.sched-seg {
+  display: inline-flex; gap: 3px; padding: 3px;
+  background: var(--bg2);
+  border: 1px solid var(--hairline-border);
+  border-radius: var(--r-control);
+}
+.sched-seg button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid transparent; border-radius: calc(var(--r-control) - 2px);
+  background: none; color: var(--muted);
+  font-family: var(--cjk); font-size: var(--fs-caption); font-weight: 500; line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.sched-seg button:hover { background: var(--tint-2); color: var(--text); }
+.sched-seg button[aria-pressed="true"] {
+  background: var(--accent-bg); border-color: var(--accent-line); color: var(--accent-fg);
+}
+
+/* 字段行 */
+.sched-fields { display: flex; flex-direction: column; gap: var(--sp-4); }
+.sched-frow { display: flex; align-items: flex-start; gap: var(--sp-4); }
+.sched-flabel {
+  width: 58px; flex: none; padding-top: 7px;
+  font-size: var(--fs-caption); color: var(--muted); text-align: right;
+}
+.sched-fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.sched-inline { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.sched-note {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-micro); color: var(--faint);
+}
+.sched-note.warn { color: var(--warn); }
+.sched-note svg { flex: none; }
+
+/* 星期 chips：38×32 实心块（周末档底再暗一档只靠底色，不压文字对比度） */
+.sched-days { display: flex; gap: 6px; flex-wrap: wrap; }
+.sched-day {
+  width: 38px; height: 32px;
+  border: 1px solid var(--neutral-line); border-radius: var(--r-control);
+  background: var(--bg2); color: var(--muted);
+  font-family: var(--cjk); font-size: var(--fs-caption); font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.sched-day:hover { background: var(--bg-active); color: var(--text); }
+.sched-day[aria-pressed="true"] {
+  background: var(--accent-bg); border-color: var(--accent-line); color: var(--accent-fg);
+}
+.sched-day.weekend[aria-pressed="false"] { background: #20283A; }
+.sched-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.sched-qbtn {
+  padding: 4px 9px;
+  /* 快捷虚线 .16：与 .u-empty 同档，glass-guard 登记例外 */
+  border: 1px dashed rgba(255, 255, 255, .16); border-radius: var(--r-pill);
+  background: transparent; color: var(--muted);
+  font-family: var(--cjk); font-size: var(--fs-micro); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.sched-qbtn:hover { background: var(--tint-2); color: var(--text); border-color: var(--hairline-hover); }
+
+/* 时:分 组合控件：外壳实心 --bg2，内嵌 select 透明化 */
+.sched-timeset {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--bg2);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-control);
+  padding: 2px;
+}
+.sched-timeset .u-select {
+  width: auto; height: calc(var(--h-control) - 6px);
+  background: transparent; border: 0;
+}
+.sched-timeset .u-select:hover { background: var(--tint-2); }
+.sched-timeset .colon { font-family: var(--mono); color: var(--muted); }
+.sched-tz {
+  font-family: var(--mono); font-size: var(--fs-nano); color: var(--muted);
+  background: var(--bg2); border: 1px solid var(--neutral-line);
+  border-radius: var(--r-badge); padding: 2px 6px; line-height: 15px;
+}
+
+/* cron 输入（高级档）：实心底 + 状态图标位 + 出错红边 */
+.sched-cron-input {
+  display: flex; align-items: center; gap: var(--sp-2);
+  background: var(--bg2);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-control);
+  padding: 2px 2px 2px 10px;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.sched-cron-input input {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  color: var(--text); font-family: var(--mono); font-size: var(--fs-body);
+  letter-spacing: .08em; padding: 8px 0;
+}
+.sched-cron-input input::placeholder { color: var(--faint-on-sunken); letter-spacing: .04em; }
+.sched-cron-input:focus-within {
+  border-color: var(--accent-line);
+  outline: var(--focus-outline); outline-offset: 2px;
+}
+.sched-cron-input.bad { border-color: var(--bad-line); }
+.sched-cron-input .state {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; margin-right: 2px;
+}
+
+/* cron 段图例（5 段，EB 形态多一格「年」）：tint 面，出错段染红 */
+.sched-segmap { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+.sched-segmap.cols-6 { grid-template-columns: repeat(6, 1fr); }
+.sched-segcell {
+  background: var(--tint-1); border: 1px solid var(--hairline);
+  border-radius: var(--r-control); padding: 7px 9px;
+}
+.sched-segcell.err { background: var(--bad-bg); border-color: var(--bad-line); }
+.sched-segcell .sk {
+  font-size: var(--fs-nano); font-weight: 600; letter-spacing: var(--ls-caps-cjk);
+  color: var(--muted); margin-bottom: 4px;
+}
+.sched-segcell .sv {
+  font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); margin-bottom: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sched-segcell.err .sv { color: var(--bad); }
+.sched-segcell .sr { font-size: var(--fs-nano); color: var(--faint); font-family: var(--mono); }
+
+/* 回填可行性 / 错误提示条：三态（info 灰可切 / warn 黄覆盖 / err 红非法） */
+.sched-callout {
+  display: flex; align-items: flex-start; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-control); font-size: var(--fs-caption); line-height: 1.6;
+}
+.sched-callout svg { flex: none; margin-top: 2px; }
+.sched-callout.info { background: var(--tint-1); border: 1px solid var(--hairline); color: var(--muted); }
+.sched-callout.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--text); }
+.sched-callout.warn svg { color: var(--warn); }
+.sched-callout.err { background: var(--bad-bg); border: 1px solid var(--bad-line); color: var(--text); }
+.sched-callout.err svg { color: var(--bad); }
+.sched-callout b { font-weight: 600; color: var(--text); }
+.sched-callout .act { margin-left: auto; flex: none; }
+
+/* 预览条：hairline 分层，不叠面 */
+.sched-preview {
+  border-top: 1px solid var(--hairline);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.sched-pv-row { display: flex; align-items: flex-start; gap: var(--sp-2); }
+.sched-pv-ico {
+  flex: none; width: 22px; height: 22px; border-radius: 6px;
+  display: grid; place-items: center;
+  background: var(--accent-bg); border: 1px solid var(--accent-line); color: var(--accent-fg);
+}
+.sched-pv-ico.bad { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad); }
+.sched-pv-ico.off { background: var(--bg2); border-color: var(--hairline-strong); color: var(--muted); }
+.sched-pv-main { min-width: 0; flex: 1; }
+.sched-pv-human { font-size: var(--fs-body); font-weight: 500; color: var(--text); }
+.sched-pv-human.bad { color: var(--bad); }
+.sched-pv-next {
+  font-size: var(--fs-caption); color: var(--muted); margin-top: 3px;
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.sched-pv-next .num {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data); color: var(--text);
+}
+.sched-crossday {
+  font-size: var(--fs-nano); color: var(--warn);
+  background: var(--warn-bg); border: 1px solid var(--warn-line);
+  border-radius: var(--r-badge); padding: 0 5px; line-height: 16px;
+}
+.sched-pv-expr { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.sched-pv-label { font-size: var(--fs-nano); color: var(--muted); letter-spacing: .04em; }
+.sched-expr {
+  font-family: var(--mono); font-size: var(--fs-caption); color: var(--text);
+  background: var(--bg2); border: 1px solid var(--neutral-line);
+  border-radius: var(--r-control); padding: 5px 9px; letter-spacing: .06em;
+}
+.sched-expr.dimmed { color: var(--muted); }
+.sched-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--line-subtle); flex: none; }
+
+/* 未来 3 次运行：双列 UTC / 北京 */
+.sched-upcoming { border-top: 1px solid var(--hairline); }
+.sched-upc-head {
+  font-size: var(--fs-nano); font-weight: 600; letter-spacing: var(--ls-caps-cjk);
+  text-transform: uppercase; color: var(--muted);
+  padding: var(--sp-2) var(--sp-4) var(--sp-1);
+}
+.sched-upc-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 5px var(--sp-4); font-size: var(--fs-caption);
+}
+.sched-upc-row:last-child { padding-bottom: var(--sp-3); }
+.sched-upc-n { font-family: var(--mono); font-size: var(--fs-nano); color: var(--faint); width: 16px; flex: none; }
+.sched-upc-utc {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data);
+  color: var(--text); width: 170px; flex: none;
+}
+.sched-upc-bj {
+  font-family: var(--mono); font-variant-numeric: var(--numeric-data); color: var(--muted);
+}
+
+/* 卡脚说明（UTC 存储纪律一句话） */
+.sched-foot {
+  border-top: 1px solid var(--hairline);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-micro); color: var(--faint);
+}
+.sched-hint {
+  display: flex; align-items: flex-start; gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--tint-1); border: 1px solid var(--hairline); border-radius: var(--r-control);
+  font-size: var(--fs-caption); color: var(--muted); line-height: 1.6;
+}
+.sched-hint b { color: var(--text); font-weight: 500; }

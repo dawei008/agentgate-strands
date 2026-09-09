@@ -1,0 +1,295 @@
+/* 设置抽屉四分节共用样式。
+   全部走令牌 + 对齐 styles/ui.css 的形态（表头下沉底 / 徽章 3px 描边 /
+   28px 控件 / 6px 圆角）。原先这里散着 12px、4px、#fff 等硬编码值，
+   换肤时不会跟着走——已清掉。CSS Modules 无法 compose 全局类，
+   所以这里是「与 ui.css 形态一致的局部复刻」，改 ui.css 时请同步。 */
+
+.section {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.section:last-child {
+  border-bottom: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 var(--sp-05);
+  font-size: var(--fs-section);
+  font-weight: 600;
+  letter-spacing: -.005em;
+  color: var(--text);
+}
+.sectionDesc {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-caption);
+  color: var(--faint);
+}
+
+/* ---------- 表单 ---------- */
+.field {
+  margin: 0 0 var(--sp-3);
+}
+.label {
+  display: block;
+  margin-bottom: var(--sp-1);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--h-control);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: var(--r-control);
+}
+.input:hover {
+  border-color: rgba(255, 255, 255, .20);
+}
+.input:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.help {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-nano);
+  color: var(--faint);
+}
+
+/* ---------- 按钮（形态同 ui.css .btn / .btn-secondary） ---------- */
+.btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  height: var(--h-control);
+  padding: 0 var(--sp-3);
+  font-family: var(--cjk);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1;
+  border-radius: var(--r-control);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.btnPrimary {
+  composes: btn;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border: 1px solid var(--accent);
+}
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+.btnSecondary {
+  composes: btn;
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, .12);
+}
+.btnSecondary:hover:not(:disabled) {
+  background: var(--bg-active);
+  border-color: rgba(255, 255, 255, .20);
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+/* 表内操作：文字链（同 ui.css .btn-link）。表格里堆带框按钮会把密排行
+   切成色块，这是 B 案明确禁止的形态。 */
+.btnLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-fg);
+  font-family: var(--cjk);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btnLink:hover:not(:disabled) {
+  color: var(--accent-active);
+  text-decoration: underline;
+}
+.btnLink:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btnLink:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  border-radius: var(--r-badge);
+  box-shadow: none;
+}
+/* 取消这类「退出编辑」的次要动作：中性灰文字链 */
+.btnLinkMuted {
+  composes: btnLink;
+  color: var(--muted);
+}
+.btnLinkMuted:hover:not(:disabled) {
+  color: var(--text);
+}
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* ---------- 状态条（语义色只上文字 + 1px 描边浅底，纪律 3） ---------- */
+.status {
+  margin-top: var(--sp-2);
+  padding: 5px var(--sp-2);
+  font-size: var(--fs-caption);
+  border-radius: var(--r-badge);
+  border: 1px solid transparent;
+}
+.ok {
+  composes: status;
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: var(--good-line);
+}
+.err {
+  composes: status;
+  background: var(--bad-bg);
+  color: var(--bad);
+  border-color: var(--bad-line);
+}
+
+/* ---------- 表格（形态同 ui.css .u-table：下沉底表头 + 强下沿 + 格内浅线） ---------- */
+.tableWrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-sm);
+}
+.table th {
+  height: var(--h-row-head);
+  padding: 0 var(--pad-cell-x);
+  background: var(--tint-1);        /* 纯 tint（与 ui.css .u-table 同步） */
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-caps-cjk);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* 拉丁表头：大写 + mono + 字距（B 案识别点） */
+.lat {
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+}
+.table td {
+  height: var(--h-row);
+  padding: 0 var(--pad-cell-x);
+  border-bottom: 1px solid rgba(255, 255, 255, .045);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table tbody tr:hover td {
+  background: var(--bg-hover);
+}
+.mono {
+  font-family: var(--mono);
+}
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  text-align: right;
+}
+.table th.num {
+  text-align: right;
+}
+/* 徽章：3px 圆角 + 1px 描边（不再是 pill；pill 在密排里读起来像标签云） */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 18px;
+  padding: 0 6px;
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--neutral);
+  background: var(--neutral-bg);
+  border: 1px solid var(--neutral-line);
+  border-radius: var(--r-badge);
+  white-space: nowrap;
+}
+.cellInput {
+  box-sizing: border-box;
+  width: 76px;
+  height: var(--h-control-xs);
+  padding: 0 6px;
+  font-family: var(--mono);
+  font-variant-numeric: var(--numeric-data);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  text-align: right;
+  background: var(--bg2);
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: var(--r-badge);
+}
+.cellInput:hover {
+  border-color: rgba(255, 255, 255, .20);
+}
+.cellInput:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.empty {
+  padding: var(--sp-2) 0;
+  font-size: var(--fs-caption);
+  color: var(--faint);
+}
+
+/* 视觉隐藏但可访问（表格行内编辑输入的 label） */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

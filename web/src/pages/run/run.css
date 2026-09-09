@@ -1,0 +1,440 @@
+/* 运行详情 trace 三栏视图。结构照 ui-prototypes/trace-view/index.html，
+   值全部走 tokens.css 令牌；通用形态（按钮/徽章/meter）用 styles/ui.css。
+   本文件只留页面特有形态：三栏骨架、run 行、环节分组条、trace 树、右栏三段式。 */
+
+.runpage {
+  /* 时长条三色：v3-C 全站恒暗——取原深色档并对 C 案画布重校
+     （条比槽亮，对槽 ≥3.0 WCAG 非文本图形阈值）。 */
+  --bar: var(--viz-2);          /* 工具调用 · 蓝（次序列，与 accent 绿区分） */
+  --bar-slow: var(--warn-dot);  /* 慢调用 · 琥珀 */
+  --bar-err: var(--bad-dot);    /* 失败调用 · 红 */
+  --track: rgba(255, 255, 255, .08);
+  --tree-bg: rgba(15, 23, 42, .45);   /* 树区下沉：比玻璃卡基色更深一档的 tint */
+  --tree-hover: var(--tint-2);
+}
+
+/* 拉丁小节标 / 栏头：mono 大写 */
+.runpage .lat {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+}
+
+/* ---------- 页头 ---------- */
+/* 布局继承 .pagehead（sticky / 48px / 底边线 / 负边距拉通）；
+   这里只覆盖下间距——run 页头下方紧跟 metabar，不需要 --sp-5 那么大 */
+.run-head { margin-bottom: var(--sp-3); }
+.run-head .crumb {
+  color: var(--faint); text-decoration: none;
+  font-size: var(--fs-caption); white-space: nowrap;
+}
+.run-head .crumb:hover { color: var(--accent-fg); }
+.run-head h1 {
+  margin: 0; font-size: var(--fs-h1); font-weight: 600;
+  letter-spacing: var(--ls-title); white-space: nowrap;
+}
+.run-head .rid {
+  font-family: var(--mono); font-size: var(--fs-micro);
+  color: var(--faint); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.run-head .hspace { flex: 1; }
+
+/* ---------- 综合报告折叠块（metabar 与三栏之间）---------- */
+/* 零玻璃（纪律 1：blur 预算只给卡壳）：纯 tint + hairline。
+   折叠头复用手风琴语汇（.tw 旋转箭头），与 .caserow 同一套开合手势。 */
+.synthblock {
+  margin-bottom: var(--sp-3);
+  background: var(--tint-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.synthhead {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: none; border: 0; padding: 6px var(--sp-3);
+  cursor: pointer; font-size: var(--fs-sm); font-family: var(--cjk);
+  color: var(--muted);
+}
+.synthhead:hover { background: var(--bg-hover); }
+.synthhead:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+.synthhead .tw {
+  width: 10px; flex: none; color: var(--faint);
+  font-size: 9px; line-height: 1;
+  transition: transform .13s ease;
+}
+.synthhead.open .tw { transform: rotate(90deg); }
+.synthhead .st { font-weight: 600; }
+.synthbody {
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  border-top: 1px solid var(--hairline);
+  /* 长文不挤走三栏主体：块内自滚 */
+  max-height: 46vh; overflow-y: auto;
+}
+.synsec { margin: 0 0 var(--sp-3); }
+.synsec:last-child { margin-bottom: 0; }
+.synsec-h {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--fs-caption); font-weight: 600; color: var(--text);
+  font-family: var(--cjk); letter-spacing: var(--ls-caps-cjk);
+}
+
+/* ---------- 三栏 ---------- */
+.run-cols {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr) 396px;
+  gap: var(--sp-2);
+  align-items: start;
+}
+/* 三栏 = 三张实心卡（v2 纪律 1：同 ui.css .card 配方，零 blur） */
+.run-cols .col {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  display: flex; flex-direction: column; min-width: 0;
+  height: calc(100vh - 178px);
+  overflow: hidden;
+}
+.run-cols .colhead {
+  display: flex; align-items: center; gap: var(--sp-2); flex: none;
+  padding: 7px var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--tint-1);          /* 纯 tint，非玻璃（表头纪律） */
+}
+.run-cols .colhead .ct {
+  font-size: var(--fs-micro); font-weight: 600;
+  color: var(--muted); white-space: nowrap;
+}
+.run-cols .colhead .cn {
+  font-family: var(--mono); font-size: var(--fs-micro);
+  color: var(--muted);
+}
+.run-cols .colhead .cs {
+  font-family: var(--mono); font-size: var(--fs-caption);
+  color: var(--text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.run-cols .colhead .hspace { flex: 1; }
+.run-cols .colbody { flex: 1; overflow-y: auto; min-height: 0; }
+
+/* ---------- 左栏：run 行 ---------- */
+.runrow {
+  display: block; width: 100%; text-align: left;
+  background: none; border: 0; border-bottom: 1px solid var(--hairline-soft);
+  padding: 7px var(--sp-3) 8px;
+  cursor: pointer; font-family: var(--cjk); position: relative;
+}
+.runrow:hover { background: var(--bg-hover); }
+.runrow.on { background: var(--accent-bg); }
+.runrow.on::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--accent);
+}
+.runrow .l1 { display: flex; align-items: center; gap: 5px; }
+.runrow .rk {
+  font-family: var(--mono); font-size: var(--fs-micro);
+  font-variant-numeric: var(--numeric-data);
+  color: var(--muted);
+}
+.runrow.on .rk { color: var(--accent-fg); font-weight: 600; }
+.runrow .l1 .hspace { flex: 1; }
+.runrow .l2 {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 3px;
+  font-family: var(--mono); font-size: var(--fs-nano);
+  font-variant-numeric: var(--numeric-data);
+  color: var(--faint);
+}
+.runrow .l2 .cjkword { font-family: var(--cjk); }
+.runrow .l2 .sep { color: var(--line-strong); }
+.runrow .l2 b { font-weight: 600; color: var(--muted); }
+
+/* ---------- 中栏：环节分组条（sticky）---------- */
+.stageband {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px var(--sp-3) 5px;
+  background: var(--bg2);          /* sticky band 必须不透明：下面有内容滚过 */
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-nano); color: var(--muted);
+  position: sticky; top: 0; z-index: 3;
+}
+.stageband:first-child { border-top: 0; }
+.stageband .sname {
+  font-weight: 600; color: var(--muted);
+  letter-spacing: var(--ls-caps-cjk);
+}
+.stageband .hspace { flex: 1; }
+.stageband .srcnote { white-space: nowrap; }
+.stageband .srcnote.real { color: var(--good); }
+
+/* ---------- 中栏：session / case 行 ---------- */
+.caserow {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: none; border: 0; border-bottom: 1px solid var(--hairline-soft);
+  padding: 0 var(--sp-3); min-height: 30px;
+  cursor: pointer; font-size: var(--fs-sm); font-family: var(--cjk);
+  position: relative; color: var(--text);
+}
+.caserow:hover { background: var(--bg-hover); }
+.caserow.on { background: var(--accent-bg); }
+.caserow.on::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--accent);
+}
+.caserow .tw {
+  width: 10px; flex: none; color: var(--faint);
+  font-size: 9px; line-height: 1;
+  transition: transform .13s ease;
+}
+.caserow.open .tw { transform: rotate(90deg); }
+.caserow .nm {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; display: flex; align-items: center; gap: 5px;
+}
+.caserow.on .nm { font-weight: 500; }
+.caserow .nm .sid {
+  font-family: var(--mono); font-size: var(--fs-caption);
+  font-variant-numeric: var(--numeric-data);
+}
+.caserow .meta {
+  flex: none;
+  font-family: var(--mono); font-size: var(--fs-nano);
+  font-variant-numeric: var(--numeric-data);
+  color: var(--faint);
+}
+.caserow .sc {
+  flex: none; width: 34px; text-align: right;
+  font-family: var(--mono); font-size: var(--fs-caption);
+  font-variant-numeric: var(--numeric-data);
+  font-weight: 600;
+}
+.caserow .sc.dim { color: var(--faint); font-weight: 400; }
+
+/* ---------- trace 树 ---------- */
+.tree {
+  background: var(--tree-bg);
+  border-bottom: 1px solid var(--hairline);
+  padding: 2px 0 4px;
+}
+.trow {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: none; border: 0; padding: 0 var(--sp-3); height: 25px;
+  font-size: var(--fs-caption); font-family: var(--cjk);
+  color: var(--text); position: relative;
+}
+button.trow { cursor: pointer; }
+button.trow:hover { background: var(--tree-hover); }
+/* a11y：密排行焦点圈也走 outline 型（纪律 4），负 offset 内缩免相邻行裁切 */
+button.trow:focus-visible,
+.runrow:focus-visible,
+.caserow:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+.trow.on { background: var(--accent-bg); box-shadow: inset 2px 0 0 var(--accent); }
+.trow .n {
+  flex: none; width: 20px; text-align: right;
+  font-family: var(--mono); font-size: var(--fs-nano);
+  font-variant-numeric: var(--numeric-data);
+  color: var(--faint);
+}
+/* 类型徽章：40px 定宽，四类左边缘严格对齐 */
+.tb {
+  flex: none; width: 40px; height: 15px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid; border-radius: 3px;
+  font: 600 9px/1 var(--mono); letter-spacing: .06em;
+}
+.tb-user  { color: var(--muted); background: var(--neutral-bg); border-color: var(--neutral-line); }
+.tb-agent { color: var(--muted); background: var(--neutral-bg); border-color: var(--line-strong); }
+.tb-tool  { color: var(--accent-fg); background: var(--accent-bg); border-color: var(--accent-line); }
+.trow .nm {
+  flex: none; max-width: 210px;
+  font-family: var(--mono); font-size: var(--fs-caption);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.trow.iserr .nm { color: var(--bad); }
+.trow .pm {
+  flex: 1; min-width: 0;
+  font-family: var(--mono); font-size: var(--fs-nano);
+  color: var(--faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.trow .pm .er { color: var(--bad); font-weight: 600; }
+.trow .pm .rt { color: var(--warn); font-weight: 600; }
+.trow .off {
+  flex: none; width: 42px; text-align: right;
+  font-family: var(--mono); font-size: var(--fs-nano);
+  font-variant-numeric: var(--numeric-data);
+  color: var(--faint);
+}
+/* 时长条：只出现在 tool 行 */
+.trow .tbar {
+  flex: none; width: 104px; height: 4px; border-radius: 2px;
+  background: var(--track); position: relative; overflow: hidden;
+}
+.trow .tbar i {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 2px; background: var(--bar);
+}
+.trow .tbar i.slow { background: var(--bar-slow); }
+.trow .tbar i.err  { background: var(--bar-err); }
+/* 无跨度行（user/assistant）：条的位置留空占位，保持列对齐 */
+.trow .tbar-void { flex: none; width: 104px; }
+.trow .dur {
+  flex: none; width: 44px; text-align: right;
+  font-family: var(--mono); font-size: var(--fs-nano);
+  color: var(--muted);
+}
+.trow .dur.slowtxt { color: var(--warn); }
+.trow .dur.na { color: var(--faint); }
+
+/* case 展开：input/output 块 */
+.caseio {
+  background: var(--tree-bg);
+  border-bottom: 1px solid var(--hairline);
+  padding: 6px var(--sp-3) 8px;
+}
+.caseio .iolbl {
+  font-size: 9px; color: var(--faint);
+  letter-spacing: var(--ls-caps);
+  margin: 5px 0 3px;
+}
+.caseio .iolbl:first-child { margin-top: 0; }
+
+/* ---------- 代码块 ---------- */
+.runpage pre.blk {
+  font: var(--fs-micro)/1.6 var(--mono);
+  white-space: pre-wrap; word-break: break-word;
+  background: var(--bg2);           /* 代码块实心底：可读性优先，零玻璃 */
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-control);
+  padding: 6px var(--sp-2); margin: 0;
+  color: var(--muted);
+  max-height: 150px; overflow: auto;
+}
+.runpage pre.blk .je { color: var(--bad); font-weight: 600; }
+/* USER/AGENT 消息全文（右栏 msg 态）：全文不截，块内不限高（右栏自己滚） */
+.runpage pre.blk.msgblk { max-height: none; font-family: var(--cjk); }
+.runpage .msgbody { font-size: var(--fs-sm); }
+
+/* 右栏一问一答（msg 态）。全部实心底 / 无底，零玻璃。 */
+.dsec-h .dim { color: var(--faint); font-family: var(--mono); letter-spacing: 0; }
+.dsec-h .turn-gap { color: var(--faint); font-family: var(--mono); letter-spacing: 0; }
+/* 「中间 N 次工具调用 · 失败 M」：夹在两段之间的一行按钮，点亮时与左栏选中行同色 */
+.runpage .turn-tools {
+  display: block; width: 100%; text-align: left;
+  padding: 5px var(--sp-3); margin: 0;
+  border: 0; border-bottom: 1px solid var(--hairline);
+  background: transparent; color: var(--muted);
+  font: var(--fs-caption)/1.4 var(--cjk); cursor: pointer;
+}
+.runpage .turn-tools:hover { background: var(--tree-hover); }
+.runpage .turn-tools.on { background: var(--accent-bg); color: var(--accent-fg); box-shadow: inset 2px 0 0 var(--accent); }
+.runpage .turn-tools:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* 无回复态 */
+.runpage .turn-none { color: var(--faint); font-size: var(--fs-caption); }
+/* AGENT 态上段的提问：默认一行截断，open 后全文换行 */
+.runpage .turn-q {
+  display: flex; align-items: flex-start; gap: 6px; width: 100%; min-width: 0;
+  padding: 4px 0; margin: 0; border: 0; background: transparent;
+  color: var(--text); font: var(--fs-sm)/1.5 var(--cjk); text-align: left; cursor: pointer;
+}
+.runpage .turn-q .tw { flex: none; color: var(--faint); font-size: var(--fs-micro); line-height: inherit; }
+.runpage .turn-q .qt { min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.runpage .turn-q.open .qt { white-space: pre-wrap; word-break: break-word; overflow: visible; }
+.runpage .turn-q:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---------- 右栏三段式 ---------- */
+.dsec { padding: 9px var(--sp-3) 10px; border-bottom: 1px solid var(--hairline); }
+.dsec:last-child { border-bottom: 0; }
+.dsec-h {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  font-size: 9px; color: var(--faint); letter-spacing: var(--ls-caps);
+}
+.dsec-h b { color: var(--muted); font-weight: 600; }
+.dsec-h .hspace { flex: 1; }
+.dsec .lbl2 {
+  font-size: 9px; color: var(--faint);
+  letter-spacing: var(--ls-caps); margin: 7px 0 3px;
+}
+
+.attrs {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr);
+  font-size: var(--fs-caption);
+}
+.attrs > span { padding: 2px 0; min-width: 0; }
+.attrs .ak { color: var(--faint); white-space: nowrap; font-size: var(--fs-micro); }
+.attrs .av {
+  font-family: var(--mono); font-size: var(--fs-micro);
+  font-variant-numeric: var(--numeric-data);
+  color: var(--text); word-break: break-all;
+}
+.attrs .av.dim { color: var(--faint); }
+.attrs .av.bad { color: var(--bad); }
+.attrs .av.warntxt { color: var(--warn); }
+
+/* SCORERS：一行一个评估器 */
+.scorer-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 104px 34px;
+  gap: 3px var(--sp-2); align-items: center;
+  padding: 5px 0; border-bottom: 1px solid var(--hairline-soft);
+}
+.scorer-row:last-child { border-bottom: 0; }
+.scorer-row .sn {
+  font-family: var(--mono); font-size: var(--fs-caption);
+  color: var(--text);
+  display: flex; align-items: center; gap: 5px;
+  overflow: hidden; white-space: nowrap;
+}
+.scorer-row .meter { width: 104px; }
+.scorer-row .meter-track { width: 104px; }
+/* errored：斜纹底，绝不画 0 分条 */
+.scorer-row.errored .meter-track {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--bg2) 0 4px,
+    var(--line-subtle) 4px 8px
+  );
+}
+.scorer-row .sv {
+  font-family: var(--mono); font-size: var(--fs-caption);
+  font-variant-numeric: var(--numeric-data);
+  font-weight: 600; text-align: right;
+}
+.scorer-row.errored .sv { color: var(--faint); font-weight: 400; }
+.scorer-row .rsn {
+  grid-column: 1 / -1;
+  font-size: var(--fs-nano); line-height: 15px; color: var(--muted);
+}
+
+/* diagnosis */
+.diagbox {
+  border-left: 2px solid var(--warn);
+  background: var(--warn-bg);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  padding: 6px var(--sp-2);
+  font-size: var(--fs-nano); line-height: 1.65; color: var(--muted);
+  margin-bottom: var(--sp-1);
+}
+.diagbox:last-child { margin-bottom: 0; }
+.diagbox > b {
+  display: block; color: var(--warn);
+  font-size: var(--fs-micro); margin-bottom: 2px;
+  font-family: var(--mono);
+}
+
+/* 右栏空态 */
+.run-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; height: 100%;
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--faint); font-size: var(--fs-caption); line-height: 1.7;
+}
+
+/* 栏内加载/错误占位 */
+.col-note { padding: var(--sp-4) var(--sp-3); color: var(--faint); font-size: var(--fs-caption); }
+.col-note.err { color: var(--bad); }
