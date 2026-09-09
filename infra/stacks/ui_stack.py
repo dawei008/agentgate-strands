@@ -47,9 +47,24 @@ REACT_PREFIX = "react"
 
 class UiStack(Stack):
     def __init__(
-        self, scope: Construct, construct_id: str, *, eval_runtime_arn: str, **kwargs
+        self,
+        scope: Construct,
+        construct_id: str,
+        *,
+        eval_runtime_arn: str,
+        name_suffix: str = "",
+        **kwargs,
     ) -> None:
+        """
+        eval_runtime_arn: ARN of the Runtime stack instance this UI fronts — always
+            the one created in the same app for the same instance (ADR-0020 D11).
+        name_suffix: appended to the Cognito hosted-domain prefix, which must be
+            unique per region (deploy fails on collision). "" for production;
+            "-<instance>" for an isolated instance. Everything else (bucket,
+            Lambda, distribution) is named by CloudFormation and cannot collide.
+        """
         super().__init__(scope, construct_id, **kwargs)
+        self.name_suffix = name_suffix
 
         # Cutover switch. Default False = public traffic still served from the
         # legacy root prefix; the React bundle is uploaded but dark.
@@ -95,7 +110,7 @@ class UiStack(Stack):
         domain = user_pool.add_domain(
             "HostedUi",
             cognito_domain=cognito.CognitoDomainOptions(
-                domain_prefix=f"eval-anything-{self.account}"
+                domain_prefix=f"eval-anything{self.name_suffix}-{self.account}"
             ),
             managed_login_version=cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
         )
