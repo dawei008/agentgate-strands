@@ -57,7 +57,7 @@ class UiStack(Stack):
     ) -> None:
         """
         eval_runtime_arn: ARN of the Runtime stack instance this UI fronts — always
-            the one created in the same app for the same instance (ADR-0020 D11).
+            the one created in the same app for the same instance (main repo ADR-0020 D11).
         name_suffix: appended to the Cognito hosted-domain prefix, which must be
             unique per region (deploy fails on collision). "" for production;
             "-<instance>" for an isolated instance. Everything else (bucket,

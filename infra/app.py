@@ -14,7 +14,7 @@ env = cdk.Environment(
 
 app = cdk.App()
 
-# Isolated acceptance instance (ADR-0020 D11): `cdk synth|deploy -c instance=deepeval`
+# Isolated acceptance instance (main repo ADR-0020 D11): `cdk synth|deploy -c instance=strands`
 # builds a SECOND Runtime+UI pair next to production, sharing nothing with it.
 # No context => production, byte-for-byte the same template as before this switch
 # existed (stack ids EvalAnythingRuntime / EvalAnythingUi, runtime "evalanything").

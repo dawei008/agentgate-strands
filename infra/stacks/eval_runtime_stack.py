@@ -14,7 +14,7 @@ from constructs import Construct
 # Default (production) AgentCore runtime name. Kept as the module constant so the
 # app-side lookup contract (RUNTIME_NAME env -> ListAgentRuntimes) has one source;
 # the stack takes it as a constructor argument so a second, isolated instance
-# (ADR-0020 D11) can carry a different name without touching this default.
+# (main repo ADR-0020 D11) can carry a different name without touching this default.
 RUNTIME_NAME = "evalanything"
 
 
