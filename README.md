@@ -122,8 +122,10 @@ aws cognito-idp admin-create-user --user-pool-id <UserPoolIdOut> \
    模型 ID；Bedrock 的模型访问要先开通。
 3. **被测 Agent 与本系统同账号同区域**，且已开启 AgentCore Observability：discovery 只列
    同账号的 Runtime（`app/discovery.py` 的 `list_agent_runtimes`），没有跨账号评估。
-4. **同一账号同一区域只能部署一套**：栈名 `EvalAnythingUi` / `EvalAnythingRuntime`
-   （`infra/app.py`）与 Cognito 域前缀 `eval-anything-<账号>`（`infra/stacks/ui_stack.py`）固定。
+4. **同一账号同一区域默认一套，第二套靠 `-c instance=<slug>`**：不带该参数时栈名
+   `EvalAnythingUi` / `EvalAnythingRuntime` 与 Cognito 域前缀 `eval-anything-<账号>` 固定；带上后
+   栈名、Runtime 名（`<slug>_evalanything`）、定时器名、Cognito 域前缀全部接后缀，与默认那套零共享
+   （`infra/app.py`；所有 cdk 子命令都要带同一个 `-c instance=`，漏掉就是在操作默认栈）。
 5. **Docker 构建网络默认 bridge**：只有构建机拦截了 bridge 网络的 TLS（镜像构建时 pip
    装不了依赖）才加 `cdk deploy EvalAnythingRuntime -c dockerHostNetwork=true`
    （`infra/stacks/eval_runtime_stack.py`），默认不需要。
